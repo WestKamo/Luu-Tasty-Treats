@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LuuTastyTreats.Api.Modules.Catalog.Domain;
 using LuuTastyTreats.Api.Modules.Identity.Domain;
+using LuuTastyTreats.Api.Modules.Orders.Domain;
 namespace LuuTastyTreats.Api.Shared.Infrastructure;
 
 public class AppDbContext : DbContext {
@@ -17,6 +18,12 @@ public class AppDbContext : DbContext {
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<Address> Addresses => Set<Address>();
+
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderItemCustomizationSelection> OrderItemCustomizationSelections => Set<OrderItemCustomizationSelection>();
+    public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
