@@ -1,0 +1,16 @@
+### 1. Admin Login (Lulama)
+POST http://localhost:5281/api/v1/auth/admin/login
+Content-Type: application/json
+
+{
+  "email": "lulamanguxa@gmail.com",
+  "password": "Ivyson@07"
+}
+
+### 2. Test Protected Ping Route (Should fail with 401 Unauthorized - No Token)
+GET http://localhost:5xxx/api/v1/admin/ping
+
+### 3. Test Protected Ping Route (Should succeed with 200 OK)
+# (Copy the "accessToken" string returned from Step 1 and paste it below after "Bearer ")
+GET http://localhost:5281/api/v1/admin/ping
+Authorization: Bearer PASTE_YOUR_ACCESSTOKEN_HERE
