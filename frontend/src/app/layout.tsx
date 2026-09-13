@@ -4,7 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
-  title: "Luu Tasty Treats",
+  title: "Luu's Tasty Treats",
   description: "Custom cakes, made your way.",
 };
 
