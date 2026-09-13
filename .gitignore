@@ -482,3 +482,15 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+# .NET Backend ignores
+**/bin/
+**/obj/
+**/wwwroot/uploads/
+.vs/
+.vscode/
+
+# Next.js Frontend ignores
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+frontend/.env.local
