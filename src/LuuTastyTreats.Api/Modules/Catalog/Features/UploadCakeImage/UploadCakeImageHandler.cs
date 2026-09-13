@@ -33,6 +33,8 @@ public class UploadCakeImageHandler : IRequestHandler<UploadCakeImageCommand, Up
         var relativeUrl = $"/uploads/cakes/{cake.CakeId}/{safeFileName}";
         var image = new CakeImage { ImageId = Guid.NewGuid(), CakeId = cake.CakeId, ImageUrl = relativeUrl, DisplayOrder = request.DisplayOrder };
         _db.CakeImages.Add(image);
+        if (request.DisplayOrder == 1) { cake.BaseImageUrl = relativeUrl; cake.IsActive = true; }
+        if (request.DisplayOrder == 1) { cake.BaseImageUrl = relativeUrl; cake.IsActive = true; }
         await _db.SaveChangesAsync(ct);
         return new UploadCakeImageResult.Success(image.ImageId, relativeUrl);
     }
