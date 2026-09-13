@@ -32,3 +32,7 @@ export async function uploadCakeImage(cakeId: string, file: File, displayOrder: 
 export async function deleteCake(cakeId: string) {
   await apiClient.delete(`/api/v1/admin/cakes/${cakeId}`);
 }
+
+export async function deleteCakeImage(cakeId: string, imageUrl: string) {
+  await apiClient.delete(`/api/v1/admin/cakes/${cakeId}/images`, { params: { imageUrl } });
+}

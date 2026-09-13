@@ -19,8 +19,15 @@ export default function CakeDetailPage() {
   const [activeImage, setActiveImage] = useState(0);
 
   const [selections, setSelections] = useState<Record<string, string[]>>({});
-  const [customText, setCustomText] = useState("");
   const [quantity, setQuantity] = useState(1);
+  
+  // Customization State
+  const [customName, setCustomName] = useState("");
+  const [customAge, setCustomAge] = useState("");
+  const [colorTweaks, setColorTweaks] = useState("");
+  const [extraNotes, setExtraNotes] = useState("");
+  const [validationError, setValidationError] = useState("");
+
   const addLine = useCartStore((s) => s.addLine);
 
   useEffect(() => {
@@ -42,8 +49,48 @@ export default function CakeDetailPage() {
     }, 0);
   }, 0);
 
-  const isValid = cake.groups.every(g => !g.isRequired || (selections[g.groupId]?.length >= g.minSelections)) &&
-    (!cake.freeTextField?.isRequired || customText.trim().length > 0);
+  // Validation: Check if required option groups are filled
+  const optionsValid = cake.groups.every(g => !g.isRequired || (selections[g.groupId]?.length >= g.minSelections));
+
+  function validateCustomization() {
+    if (customAge && isNaN(Number(customAge))) {
+      setValidationError("Age must be a valid number.");
+      return false;
+    }
+    setValidationError("");
+    return true;
+  }
+
+  function handleAddToCart() {
+    if (!optionsValid) {
+      toast.error("Please complete all required options above.");
+      return;
+    }
+    if (!validateCustomization()) return;
+
+    // Compile the custom fields into a single string for the backend
+    const compiledNotes = [
+      customName ? `Name: ${customName.trim()}` : "",
+      customAge ? `Age: ${customAge.trim()}` : "",
+      colorTweaks ? `Colors: ${colorTweaks.trim()}` : "",
+      extraNotes ? `Notes: ${extraNotes.trim()}` : ""
+    ].filter(Boolean).join(" | ");
+
+    const allSelectedOptionIds = Object.values(selections).flat();
+    
+    addLine({
+      lineId: crypto.randomUUID(),
+      cakeId: cake!.cakeId,
+      cakeName: cake!.name,
+      quantity,
+      unitPricePreview: currentPrice,
+      customText: compiledNotes || undefined,
+      selectedOptionIds: allSelectedOptionIds
+    });
+    
+    toast.success(`Added to cart!`, { icon: '🍰' });
+    router.push("/cart");
+  }
 
   function toggleOption(groupId: string, optionId: string, type: "single" | "multiple", max: number) {
     setSelections(prev => {
@@ -55,58 +102,36 @@ export default function CakeDetailPage() {
     });
   }
 
-  function handleAddToCart() {
-    if (!isValid) return;
-    const allSelectedOptionIds = Object.values(selections).flat();
-    addLine({
-      lineId: crypto.randomUUID(),
-      cakeId: cake!.cakeId,
-      cakeName: cake!.name,
-      quantity,
-      unitPricePreview: currentPrice,
-      customText: customText.trim() || undefined,
-      selectedOptionIds: allSelectedOptionIds
-    });
-    toast.success(`Added to cart!`, { icon: '🍰' });
-    router.push("/cart");
-  }
-
   const displayImages = cake.images?.length ? cake.images : [cake.baseImageUrl];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-16">
-      <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-6 lg:py-16">
+      <div className="grid grid-cols-1 gap-8 lg:gap-12 lg:grid-cols-2">
         
-        {/* Gallery Section */}
-        <div>
-          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative h-[28rem] w-full overflow-hidden rounded-4xl bg-vanilla/40 shadow-soft">
-            <Image 
-              src={displayImages[activeImage] || "/placeholder.png"} 
-              alt={cake.name} 
-              fill 
-              priority 
-              sizes="(max-width: 768px) 100vw, 50vw" 
-              className="object-cover" 
-            />
+        {/* Left: Gallery */}
+        <div className="relative lg:sticky lg:top-24 h-fit">
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative h-[32rem] w-full overflow-hidden rounded-4xl bg-vanilla/40 shadow-soft">
+            <Image src={displayImages[activeImage] || "/placeholder.png"} alt={cake.name} fill priority sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
           </motion.div>
-          
           {displayImages.length > 1 && (
             <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {displayImages.map((img, idx) => (
                 <button key={idx} onClick={() => setActiveImage(idx)} className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${activeImage === idx ? "border-berry opacity-100" : "border-transparent opacity-50 hover:opacity-100"}`}>
-                  <Image src={img} alt={`Gallery thumbnail ${idx}`} fill sizes="80px" className="object-cover" />
+                  <Image src={img} alt={`Thumbnail ${idx}`} fill sizes="80px" className="object-cover" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Configurator Section */}
+        {/* Right: Configurator */}
         <div>
           <h1 className="font-serif text-4xl font-semibold text-chocolate">{cake.name}</h1>
           <p className="mt-3 text-chocolate/60 leading-relaxed">{cake.description}</p>
 
           <div className="mt-10 space-y-8">
+            
+            {/* Standard Options (Flavors, Sizes) */}
             {cake.groups.map((group) => (
               <div key={group.groupId}>
                 <div className="mb-3 flex items-baseline justify-between">
@@ -130,19 +155,55 @@ export default function CakeDetailPage() {
               </div>
             ))}
 
-            {cake.freeTextField && (
-              <div>
-                <label className="mb-2 block font-medium text-chocolate">
-                  {cake.freeTextField.label} {cake.freeTextField.isRequired && <span className="ml-1 text-berry-dark">*</span>}
-                </label>
-                <input type="text" maxLength={cake.freeTextField.maxLength} value={customText} onChange={(e) => setCustomText(e.target.value)} className="w-full rounded-2xl border border-chocolate/15 bg-white px-5 py-3.5 text-chocolate outline-none transition focus:border-berry focus:ring-4 focus:ring-berry/20" placeholder="e.g. Happy 30th Birthday, Sam!" />
-                <p className="mt-1.5 text-xs text-chocolate/40 text-right">{customText.length}/{cake.freeTextField.maxLength}</p>
+            {/* Customization Block */}
+            <div className="rounded-4xl border border-chocolate/10 bg-white/50 p-6 shadow-sm">
+              <h3 className="font-serif text-xl font-medium text-chocolate mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-berry-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                Personalize this Design
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-chocolate/80">Name on Cake</label>
+                  <div className="relative">
+                    <svg className="absolute left-3 top-3.5 w-4 h-4 text-chocolate/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="e.g. Phindile" className="w-full rounded-2xl border border-chocolate/15 bg-white pl-9 pr-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-chocolate/80">Age / Number</label>
+                  <div className="relative">
+                    <svg className="absolute left-3 top-3.5 w-4 h-4 text-chocolate/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
+                    <input type="text" value={customAge} onChange={(e) => { setCustomAge(e.target.value); validateCustomization(); }} placeholder="e.g. 25" className="w-full rounded-2xl border border-chocolate/15 bg-white pl-9 pr-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
+                  </div>
+                </div>
               </div>
-            )}
+
+              <div className="mb-4">
+                <label className="mb-1 block text-sm font-medium text-chocolate/80">Color Tweaks</label>
+                <div className="relative">
+                  <svg className="absolute left-3 top-3.5 w-4 h-4 text-chocolate/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                  <input type="text" value={colorTweaks} onChange={(e) => setColorTweaks(e.target.value)} placeholder="e.g. Change pink frosting to baby blue" className="w-full rounded-2xl border border-chocolate/15 bg-white pl-9 pr-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-chocolate/80">Extra Details (Optional)</label>
+                <textarea rows={2} value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} placeholder="Tiers, specific flavor combinations, allergies..." className="w-full rounded-2xl border border-chocolate/15 bg-white px-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
+              </div>
+              
+              <AnimatePresence>
+                {validationError && (
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-3 font-medium">
+                    {validationError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
 
             <div className="flex items-center justify-between border-t border-chocolate/10 pt-6">
               <label className="font-medium text-chocolate">Quantity</label>
-              <div className="flex items-center gap-4 bg-white border border-chocolate/15 rounded-full px-4 py-1.5">
+              <div className="flex items-center gap-4 bg-white border border-chocolate/15 rounded-full px-4 py-1.5 shadow-sm">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-xl text-chocolate/60 hover:text-chocolate pb-1">-</button>
                 <span className="w-8 text-center font-medium">{quantity}</span>
                 <button onClick={() => setQuantity(quantity + 1)} className="text-xl text-chocolate/60 hover:text-chocolate pb-1">+</button>
@@ -157,8 +218,15 @@ export default function CakeDetailPage() {
                 <span className="font-serif text-3xl font-semibold text-chocolate">R{(currentPrice * quantity).toFixed(2)}</span>
               </motion.div>
             </AnimatePresence>
-            <motion.button disabled={!isValid} onClick={handleAddToCart} whileHover={isValid ? { scale: 1.02 } : {}} whileTap={isValid ? { scale: 0.97 } : {}} className={`w-full rounded-full py-4.5 font-semibold tracking-wide transition-all duration-300 ${isValid ? "bg-chocolate text-cream shadow-soft hover:bg-chocolate-light hover:shadow-xl" : "cursor-not-allowed bg-chocolate/10 text-chocolate/40"}`}>
-              {isValid ? "Add to Cart" : "Complete required options"}
+            <motion.button 
+              disabled={!optionsValid} 
+              onClick={handleAddToCart} 
+              whileHover={optionsValid ? { scale: 1.02 } : {}} 
+              whileTap={optionsValid ? { scale: 0.97 } : {}} 
+              className={`w-full flex items-center justify-center gap-3 rounded-full py-4.5 font-semibold tracking-wide transition-all duration-300 ${optionsValid ? "bg-chocolate text-cream shadow-soft hover:bg-chocolate-light hover:shadow-xl" : "cursor-not-allowed bg-chocolate/10 text-chocolate/40"}`}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              {optionsValid ? "Add to Cart" : "Complete required options"}
             </motion.button>
           </div>
         </div>
