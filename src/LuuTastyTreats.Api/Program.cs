@@ -7,6 +7,7 @@ using LuuTastyTreats.Api.Modules.Identity.Features.AdminLogin;
 using LuuTastyTreats.Api.Modules.Orders;
 using LuuTastyTreats.Api.Modules.Orders.Features.PlaceOrder;
 using LuuTastyTreats.Api.Modules.Orders.Hubs;
+using LuuTastyTreats.Api.Modules.Payments;
 using LuuTastyTreats.Api.Shared.Infrastructure;
 using LuuTastyTreats.Api.Shared.Infrastructure.Auth;
 using LuuTastyTreats.Api.Shared.Infrastructure.Seed;
@@ -27,22 +28,23 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-// SignalR Service Registration
 builder.Services.AddSignalR();
-
-// CORS for local frontend/admin dashboard connection support
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowFrontend", policy => {
-        policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
     });
 });
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection(UploadOptions.SectionName));
+
+// FIX: Explicitly register the PayFast configuration and HttpClient for DI
+builder.Services.Configure<PayFastOptions>(builder.Configuration.GetSection(PayFastOptions.SectionName));
+builder.Services.AddHttpClient<PayFastClient>(client => {
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => {
     options.MultipartBodyLengthLimit = 10 * 1024 * 1024;
 });
@@ -66,8 +68,6 @@ builder.Services.AddAuthentication(options => {
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromSeconds(30)
     };
-    
-    // Allow SignalR to read access token from query string parameter for WebSocket connections
     options.Events = new JwtBearerEvents {
         OnMessageReceived = context => {
             var accessToken = context.Request.Query["access_token"];
@@ -111,8 +111,8 @@ app.MapGet("/health/db", async (IConfiguration config) => {
 app.MapCatalogEndpoints();
 app.MapIdentityEndpoints();
 app.MapOrdersEndpoints();
+app.MapPaymentsEndpoints();
 
-// Map SignalR Admin Hub Endpoint (Protected by SuperAdminOnly policy)
 app.MapHub<AdminOrderHub>("/hubs/admin-orders");
 
 app.Run();

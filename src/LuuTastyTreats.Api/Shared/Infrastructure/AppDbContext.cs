@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using LuuTastyTreats.Api.Modules.Catalog.Domain;
 using LuuTastyTreats.Api.Modules.Identity.Domain;
 using LuuTastyTreats.Api.Modules.Orders.Domain;
+using LuuTastyTreats.Api.Modules.Payments.Domain;
 namespace LuuTastyTreats.Api.Shared.Infrastructure;
 
 public class AppDbContext : DbContext {
@@ -24,6 +25,9 @@ public class AppDbContext : DbContext {
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderItemCustomizationSelection> OrderItemCustomizationSelections => Set<OrderItemCustomizationSelection>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+    
+    // Explicit DbSet for Payment Transactions
+    public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
