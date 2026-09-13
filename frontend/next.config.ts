@@ -1,16 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: false, // Disables the artificial double-mount in dev
+  reactStrictMode: false,
   images: {
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
-      { protocol: "https", hostname: "placehold.co" },
-      { protocol: "http", hostname: "localhost" },
       { protocol: "http", hostname: "127.0.0.1" },
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "placehold.co" }
     ],
+    dangerouslyAllowSVG: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "http://127.0.0.1:5281/uploads/:path*",
+      },
+    ];
   },
 };
 

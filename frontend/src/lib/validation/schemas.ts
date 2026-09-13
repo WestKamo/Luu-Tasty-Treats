@@ -1,35 +1,36 @@
 import { z } from "zod";
+
 export const adminLoginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().email("Valid email is required"),
   password: z.string().min(1, "Password is required"),
 });
 export type AdminLoginFormValues = z.infer<typeof adminLoginSchema>;
 
-export const checkoutSchema = z.object({
-  customerEmail: z.string().email("Enter a valid email"),
-  customerFullName: z.string().min(1, "Full name is required").max(150),
-  customerPhone: z.string().optional(),
-  deliveryMethod: z.enum(["pickup", "delivery"]),
-  requestedDate: z.string().min(1, "Pick a date"),
-  line1: z.string().optional(),
-  line2: z.string().optional(),
-  city: z.string().optional(),
-  provinceState: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.deliveryMethod === "delivery") {
-    if (!data.line1) ctx.addIssue({ code: "custom", path: ["line1"], message: "Address line 1 is required" });
-    if (!data.city) ctx.addIssue({ code: "custom", path: ["city"], message: "City is required" });
-    if (!data.country) ctx.addIssue({ code: "custom", path: ["country"], message: "Country is required" });
-  }
-});
-export type CheckoutFormValues = z.infer<typeof checkoutSchema>;
-
-export const cakeEditSchema = z.object({
+export const createCakeSchema = z.object({
   name: z.string().min(1, "Name is required").max(150),
   description: z.string().max(2000).optional(),
   basePrice: z.coerce.number().min(0, "Price cannot be negative"),
-  isActive: z.boolean(),
+});
+export type CreateCakeFormValues = z.infer<typeof createCakeSchema>;
+
+export const cakeEditSchema = createCakeSchema.extend({
+  isActive: z.boolean()
 });
 export type CakeEditFormValues = z.infer<typeof cakeEditSchema>;
+
+export const checkoutSchema = z.object({
+  customerFullName: z.string().min(2, "Name is required"),
+  customerEmail: z.string().email("Valid email required"),
+  customerPhone: z.string().min(10, "Valid phone number required"),
+  deliveryMethod: z.enum(["Pickup", "Delivery"]),
+  requestedDate: z.string().min(1, "Requested date is required"),
+  deliveryAddress: z.object({
+    line1: z.string().min(1, "Address is required"),
+    line2: z.string().optional(),
+    city: z.string().min(1, "City is required"),
+    provinceState: z.string().min(1, "Province/State is required"),
+    postalCode: z.string().min(1, "Postal code is required"),
+    country: z.string().min(1, "Country is required")
+  }).optional()
+});
+export type CheckoutFormValues = z.infer<typeof checkoutSchema>;
