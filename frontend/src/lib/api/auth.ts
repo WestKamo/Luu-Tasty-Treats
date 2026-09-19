@@ -2,10 +2,20 @@ import { apiClient } from "./client";
 
 export interface CustomerLoginRequest { email: string; password: string; }
 export interface CustomerRegisterRequest { firstName: string; lastName: string; email: string; password: string; }
-export interface CustomerAuthResponse { accessToken: string; expiresAtUtc: string; email: string; fullName?: string; }
+export interface CustomerAuthResponse { accessToken: string; expiresAtUtc: string; email: string; fullName: string; }
+
+// Admin Login Payload & Response interfaces
+export interface AdminLoginRequest { email: string; password: string; }
+export interface AdminAuthResponse { accessToken: string; expiresAtUtc: string; email: string; fullName: string; }
 
 export async function customerLogin(payload: CustomerLoginRequest) {
   const { data } = await apiClient.post<CustomerAuthResponse>("/api/v1/auth/login", payload);
+  return data;
+}
+
+// Added adminLogin function using your apiClient instance
+export async function adminLogin(payload: AdminLoginRequest) {
+  const { data } = await apiClient.post<AdminAuthResponse>("/api/v1/auth/admin-login", payload);
   return data;
 }
 
