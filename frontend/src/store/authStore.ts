@@ -8,6 +8,7 @@ interface AuthState {
   setSession: (accessToken: string, email: string, roles: string[]) => void;
   logout: () => void;
   isSuperAdmin: () => boolean;
+  isCustomer: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,7 +20,8 @@ export const useAuthStore = create<AuthState>()(
       setSession: (accessToken, email, roles) => set({ accessToken, email, roles }),
       logout: () => set({ accessToken: null, email: null, roles: [] }),
       isSuperAdmin: () => get().roles.includes("SuperAdmin"),
+      isCustomer: () => get().roles.includes("Customer"),
     }),
-    { name: "luu-tasty-treats-admin-auth" }
+    { name: "luu-tasty-treats-auth" }
   )
 );

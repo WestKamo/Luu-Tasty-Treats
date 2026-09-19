@@ -3,7 +3,6 @@ using FluentValidation;
 using LuuTastyTreats.Api.Modules.Catalog;
 using LuuTastyTreats.Api.Modules.Catalog.Features.UpdateCake;
 using LuuTastyTreats.Api.Modules.Catalog.Features.CreateCake;
-using LuuTastyTreats.Api.Modules.Catalog.Features.CreateCake;
 using LuuTastyTreats.Api.Modules.Identity;
 using LuuTastyTreats.Api.Modules.Identity.Features.AdminLogin;
 using LuuTastyTreats.Api.Modules.Orders;

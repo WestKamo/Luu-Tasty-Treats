@@ -1,33 +1,24 @@
 namespace LuuTastyTreats.Api.Modules.Orders.Domain;
-public static class OrderStatus {
-    public const string PendingPayment = "pending_payment";
-    public const string Paid = "paid";
-    public const string InKitchen = "in_kitchen";
-    public const string Ready = "ready";
-    public const string OutForDelivery = "out_for_delivery";
-    public const string Completed = "completed";
-    public const string Cancelled = "cancelled";
-    public const string Refunded = "refunded";
-}
-public static class DeliveryMethod {
-    public const string Pickup = "pickup";
-    public const string Delivery = "delivery";
-}
+public enum OrderStatus { PendingPayment, Paid, Baking, OutForDelivery, Completed, Cancelled }
 public class Order {
     public Guid OrderId { get; set; }
     public string OrderNumber { get; set; } = default!;
-    public Guid UserId { get; set; }
-    public string Status { get; set; } = OrderStatus.PendingPayment;
-    public string DeliveryMethod { get; set; } = default!;
-    public Guid? DeliveryAddressId { get; set; }
+    public string CustomerEmail { get; set; } = default!;
+    public string CustomerPhone { get; set; } = default!;
+    public string IdempotencyKey { get; set; } = default!;
+    public string RequestHash { get; set; } = default!;
     public DateOnly RequestedDate { get; set; }
-    public decimal Subtotal { get; set; }
-    public decimal DeliveryFee { get; set; }
-    public decimal TaxAmount { get; set; }
     public decimal TotalAmount { get; set; }
-    public string? IdempotencyKey { get; set; }
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
-    public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
-    public ICollection<OrderStatusHistory> StatusHistory { get; set; } = new List<OrderStatusHistory>();
+    public OrderStatus Status { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<OrderItem> Items { get; set; } = [];
+}
+public class OrderItem {
+    public Guid OrderItemId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid CakeId { get; set; }
+    public string CakeName { get; set; } = default!;
+    public decimal UnitPrice { get; set; }
+    public int Quantity { get; set; }
+    public string? Note { get; set; }
 }
