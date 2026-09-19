@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///[next]/internal/font/google/playfair_display_67b3f14f.module.css"],"sourcesContent":["@font-face {\n    font-family: 'Playfair Display Fallback';\n    src: local(\"Times New Roman\");\n    ascent-override: 97.25%;\ndescent-override: 22.56%;\nline-gap-override: 0.00%;\nsize-adjust: 111.26%;\n\n}\n.className {\n    font-family: 'Playfair Display', 'Playfair Display Fallback';\n    font-style: normal;\n\n}\n.variable {\n    --font-serif: 'Playfair Display', 'Playfair Display Fallback';\n}\n"],"names":[],"mappings":"AAAA;;;;;;;;;AASA;;;;;AAKA","ignoreList":[0]}}]
+}

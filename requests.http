@@ -8,9 +8,9 @@ Content-Type: application/json
 }
 
 ### 2. Test Protected Ping Route (Should fail with 401 Unauthorized - No Token)
-GET http://localhost:5xxx/api/v1/admin/ping
+GET http://localhost:5281/api/v1/admin/ping
 
 ### 3. Test Protected Ping Route (Should succeed with 200 OK)
 # (Copy the "accessToken" string returned from Step 1 and paste it below after "Bearer ")
 GET http://localhost:5281/api/v1/admin/ping
-Authorization: Bearer PASTE_YOUR_ACCESSTOKEN_HERE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1M2NlNTIwNy1kZWU3LTQwYmMtOWU1Yy0wNTAyMjFmMjdlZTgiLCJlbWFpbCI6Imx1bGFtYW5ndXhhQGdtYWlsLmNvbSIsImp0aSI6IjcyMDljZTJmLTY5OGMtNDEwNy1hYzg4LTZhODA1NGNlMWM0OCIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlN1cGVyQWRtaW4iLCJleHAiOjE3ODg3MDM3MDcsImlzcyI6Ikx1dVRhc3R5VHJlYXRzLkFwaSIsImF1ZCI6Ikx1dVRhc3R5VHJlYXRzLkNsaWVudHMifQ.mFS0iCqGPFsqrGtPhjOp6zBlEvY6ivR5RwArCMiKyNc

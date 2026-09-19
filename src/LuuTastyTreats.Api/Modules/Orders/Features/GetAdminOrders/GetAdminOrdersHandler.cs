@@ -15,7 +15,7 @@ public class GetAdminOrdersHandler : IRequestHandler<GetAdminOrdersQuery, List<A
             .AsNoTracking()
             .OrderByDescending(o => o.CreatedAt)
             .Take(request.Limit)
-            .Select(o => new AdminOrderSummaryDto(o.OrderId, o.OrderNumber, o.Status, o.TotalAmount, o.CreatedAt))
+            .Select(o => new AdminOrderSummaryDto(o.OrderId, o.OrderNumber, o.Status.ToString(), o.TotalAmount, o.CreatedAt))
             .ToListAsync(ct);
     }
 }

@@ -13,12 +13,11 @@ export async function customerLogin(payload: CustomerLoginRequest) {
   return data;
 }
 
-// Added adminLogin function using your apiClient instance
+// Updated adminLogin function to match backend route
 export async function adminLogin(payload: AdminLoginRequest) {
-  const { data } = await apiClient.post<AdminAuthResponse>("/api/v1/auth/admin-login", payload);
+  const { data } = await apiClient.post<AdminAuthResponse>("/api/v1/auth/admin/login", payload);
   return data;
 }
-
 export async function customerRegister(payload: CustomerRegisterRequest) {
   const { data } = await apiClient.post<CustomerAuthResponse>("/api/v1/auth/register", payload);
   return data;

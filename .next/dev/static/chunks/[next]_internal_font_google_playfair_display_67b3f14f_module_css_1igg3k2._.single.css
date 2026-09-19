@@ -1,0 +1,20 @@
+/* [next]/internal/font/google/playfair_display_67b3f14f.module.css [app-client] (css) */
+@font-face {
+  font-family: Playfair Display Fallback;
+  src: local(Times New Roman);
+  ascent-override: 97.25%;
+  descent-override: 22.56%;
+  line-gap-override: 0.0%;
+  size-adjust: 111.26%;
+}
+
+.playfair_display_67b3f14f-module__gEmJ9a__className {
+  font-family: Playfair Display, Playfair Display Fallback;
+  font-style: normal;
+}
+
+.playfair_display_67b3f14f-module__gEmJ9a__variable {
+  --font-serif: "Playfair Display", "Playfair Display Fallback";
+}
+
+/*# sourceMappingURL=%5Bnext%5D_internal_font_google_playfair_display_67b3f14f_module_css_1igg3k2._.single.css.map*/

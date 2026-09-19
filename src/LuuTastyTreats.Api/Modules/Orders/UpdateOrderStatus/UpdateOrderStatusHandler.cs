@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using LuuTastyTreats.Api.Modules.Orders.Domain;
 using LuuTastyTreats.Api.Modules.Orders.Hubs;
 using LuuTastyTreats.Api.Shared.Infrastructure;
@@ -9,11 +13,17 @@ namespace LuuTastyTreats.Api.Modules.Orders.Features.UpdateOrderStatus;
 
 public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand, UpdateOrderStatusResult>
 {
-    private static readonly HashSet<string> ValidStatuses = new()
+    // 1. Added .ToString() so the HashSet holds actual strings
+    private static readonly HashSet<string> ValidStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
-        OrderStatus.PendingPayment, OrderStatus.Paid, OrderStatus.InKitchen,
-        OrderStatus.Ready, OrderStatus.OutForDelivery, OrderStatus.Completed,
-        OrderStatus.Cancelled, OrderStatus.Refunded
+        OrderStatus.PendingPayment.ToString(), 
+        OrderStatus.Paid.ToString(), 
+        OrderStatus.InKitchen.ToString(),
+        OrderStatus.Ready.ToString(), 
+        OrderStatus.OutForDelivery.ToString(), 
+        OrderStatus.Completed.ToString(),
+        OrderStatus.Cancelled.ToString(), 
+        OrderStatus.Refunded.ToString()
     };
 
     private readonly AppDbContext _db;
@@ -34,14 +44,17 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
         if (order is null)
             return new UpdateOrderStatusResult.OrderNotFound();
 
-        order.Status = request.Status;
-        order.UpdatedAt = DateTimeOffset.UtcNow;
+        // 2. Safely parse the string request into the enum
+        order.Status = Enum.Parse<OrderStatus>(request.Status, true);
+        
+        // 3. Matched DateTime.UtcNow to the DateTime property we added to the Order class
+        order.UpdatedAt = DateTime.UtcNow;
 
         _db.Set<OrderStatusHistory>().Add(new OrderStatusHistory
         {
             Id = Guid.NewGuid(),
             OrderId = order.OrderId,
-            Status = request.Status,
+            Status = request.Status, 
             Note = request.Note
         });
 
@@ -51,9 +64,10 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
         {
             orderId = order.OrderId,
             orderNumber = order.OrderNumber,
-            status = order.Status
+            status = order.Status.ToString() // Send enum as string over websockets
         }, ct);
 
-        return new UpdateOrderStatusResult.Success(order.OrderId, order.OrderNumber, order.Status);
+        // 4. Return the status as a string to satisfy the Result record
+        return new UpdateOrderStatusResult.Success(order.OrderId, order.OrderNumber, order.Status.ToString());
     }
 }

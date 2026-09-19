@@ -42,7 +42,7 @@ public class PlaceOrderHandler : IRequestHandler<PlaceOrderCommand, PlaceOrderRe
 
         // 2. Handle Delivery Address
         Guid? deliveryAddressId = null;
-        if (request.DeliveryMethod == DeliveryMethod.Delivery && request.DeliveryAddress is not null) {
+        if (request.DeliveryMethod == DeliveryMethod.Delivery.ToString() && request.DeliveryAddress is not null) {
             var addr = request.DeliveryAddress;
             var address = new Address {
                 AddressId = Guid.NewGuid(),
@@ -160,7 +160,7 @@ public class PlaceOrderHandler : IRequestHandler<PlaceOrderCommand, PlaceOrderRe
 
         // 6. Calculate Final Totals
         const decimal flatDeliveryFee = 50.00m;
-        var deliveryFee = request.DeliveryMethod == DeliveryMethod.Delivery ? flatDeliveryFee : 0m;
+        var deliveryFee = request.DeliveryMethod == DeliveryMethod.Delivery.ToString() ? flatDeliveryFee : 0m;
         var totalAmount = subtotal + deliveryFee;
         var orderNumber = $"CK-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
 
@@ -170,7 +170,7 @@ public class PlaceOrderHandler : IRequestHandler<PlaceOrderCommand, PlaceOrderRe
             OrderNumber = orderNumber,
             UserId = customer.UserId,
             Status = OrderStatus.PendingPayment,
-            DeliveryMethod = request.DeliveryMethod,
+            DeliveryMethod = Enum.Parse<DeliveryMethod>(request.DeliveryMethod, true),
             DeliveryAddressId = deliveryAddressId,
             RequestedDate = request.RequestedDate,
             Subtotal = subtotal,
@@ -183,7 +183,7 @@ public class PlaceOrderHandler : IRequestHandler<PlaceOrderCommand, PlaceOrderRe
         order.StatusHistory.Add(new OrderStatusHistory {
             Id = Guid.NewGuid(),
             OrderId = order.OrderId,
-            Status = OrderStatus.PendingPayment,
+            Status = OrderStatus.PendingPayment.ToString(),
             Note = "Order created."
         });
 
@@ -202,6 +202,6 @@ public class PlaceOrderHandler : IRequestHandler<PlaceOrderCommand, PlaceOrderRe
             createdAt = order.CreatedAt
         }, ct);
 
-        return new PlaceOrderResult.Success(order.OrderId, order.OrderNumber, order.TotalAmount, order.Status);
+        return new PlaceOrderResult.Success(order.OrderId, order.OrderNumber, order.TotalAmount, order.Status.ToString());
     }
 }

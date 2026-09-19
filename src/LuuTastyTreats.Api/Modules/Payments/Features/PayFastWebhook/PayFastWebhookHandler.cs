@@ -69,7 +69,7 @@ public sealed class PayFastWebhookHandler : IRequestHandler<PayFastWebhookComman
             order.Status = OrderStatus.Paid;
             order.UpdatedAt = DateTimeOffset.UtcNow;
             order.StatusHistory.Add(new OrderStatusHistory {
-                Id = Guid.NewGuid(), OrderId = order.OrderId, Status = OrderStatus.Paid,
+                Id = Guid.NewGuid(), OrderId = order.OrderId, Status = OrderStatus.Paid.ToString(),
                 Note = $"Payment received via PayFast (Ref: {pfPaymentId})"
             });
             transaction.ProcessedAt = DateTimeOffset.UtcNow;
