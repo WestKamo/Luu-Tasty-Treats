@@ -3,14 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, Loader2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import { Wand2 } from "lucide-react";
 
-import { getCakes, getCakeCustomizationSchema } from "@/lib/api/catalog";
+import { getCakes } from "@/lib/api/catalog";
 import { CakeSummary } from "@/types/catalog";
-import { useCartStore } from "@/store/cartStore";
 
 type QuickAddState = "idle" | "loading" | "added";
 
@@ -92,56 +89,9 @@ export default function CakesPage() {
   );
 }
 
+// Replace the CakeCard function in src/app/cakes/page.tsx with:
+
 function CakeCard({ cake }: { cake: CakeSummary }) {
-  const router = useRouter();
-  const addLine = useCartStore((s) => s.addLine);
-  const [state, setState] = useState<QuickAddState>("idle");
-
-  async function handleQuickAdd(e: React.MouseEvent) {
-    // The whole card is a <Link> — stop this click from navigating.
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (state !== "idle") return;
-    setState("loading");
-
-    try {
-      const schema = await getCakeCustomizationSchema(cake.cakeId);
-
-      const hasRequiredChoices =
-        schema.groups.some((g) => g.isRequired && g.minSelections > 0) ||
-        schema.freeTextField?.isRequired === true;
-
-      // Required options can't be guessed from the grid. Adding a line without them
-      // would pass here but get rejected by the backend at checkout, so send the
-      // customer to the configurator instead.
-      if (hasRequiredChoices) {
-        setState("idle");
-        toast("This cake needs a few choices first", { icon: "🎂" });
-        router.push(`/cakes/${cake.cakeId}`);
-        return;
-      }
-
-      addLine({
-        lineId: crypto.randomUUID(),
-        cakeId: cake.cakeId,
-        quantity: 1,
-        customText: undefined,
-        selectedOptionIds: [],
-        cakeName: cake.name,
-        unitPricePreview: cake.basePrice,
-        selectedOptionsPreview: [],
-      });
-
-      setState("added");
-      toast.success(`${cake.name} added to your bag`);
-      setTimeout(() => setState("idle"), 1800);
-    } catch {
-      setState("idle");
-      toast.error("Couldn't add that just now. Please try again.");
-    }
-  }
-
   return (
     <Link
       href={`/cakes/${cake.cakeId}`}
@@ -163,55 +113,12 @@ function CakeCard({ cake }: { cake: CakeSummary }) {
           </span>
         )}
 
-        <motion.button
-          type="button"
-          onClick={handleQuickAdd}
-          aria-label={`Add ${cake.name} to cart`}
-          whileTap={{ scale: 0.9 }}
-          className={`absolute bottom-4 right-4 flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium shadow-soft transition-colors duration-300 ${
-            state === "added"
-              ? "bg-emerald-500 text-white"
-              : "bg-chocolate text-cream hover:bg-berry-dark"
-          }`}
+        <span
+          aria-hidden="true"
+          className="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-chocolate text-cream shadow-soft transition-transform duration-300 group-hover:scale-110 group-hover:bg-berry-dark"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            {state === "loading" && (
-              <motion.span
-                key="loading"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                className="flex items-center"
-              >
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </motion.span>
-            )}
-            {state === "added" && (
-              <motion.span
-                key="added"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                className="flex items-center gap-2"
-              >
-                <Check className="h-4 w-4" />
-                Added
-              </motion.span>
-            )}
-            {state === "idle" && (
-              <motion.span
-                key="idle"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+          <Wand2 className="h-5 w-5" />
+        </span>
       </div>
 
       <div className="p-6">
@@ -223,13 +130,11 @@ function CakeCard({ cake }: { cake: CakeSummary }) {
             </span>
           )}
         </div>
-
         <p className="mt-1 line-clamp-2 text-sm text-chocolate/50">{cake.description}</p>
-
         <div className="mt-4 flex items-center justify-between border-t border-chocolate/8 pt-4">
           <p className="font-semibold text-berry-dark">From R{cake.basePrice.toFixed(2)}</p>
           <span className="text-xs font-medium text-chocolate/40 transition group-hover:text-berry-dark">
-            Personalize →
+            Personalize this design →
           </span>
         </div>
       </div>

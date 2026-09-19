@@ -1,5 +1,7 @@
 "use client";
+
 import { motion } from "framer-motion";
+
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
@@ -10,7 +12,8 @@ export default function AboutPage() {
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-8 rounded-4xl bg-white p-6 shadow-soft">
         <h2 className="font-serif text-xl font-semibold text-chocolate">Pickup Location</h2>
-        <p className="mt-2 text-chocolate/70">Germiston, Gauteng, South Africa</p>
+        <p className="mt-2 text-chocolate/70">Kokosi, Fochville, North West, South Africa</p>
+        <p className="mt-1 text-sm text-chocolate/40">(Placeholder — swap in your exact street address)</p>
       </motion.div>
     </div>
   );

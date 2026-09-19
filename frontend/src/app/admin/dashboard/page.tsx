@@ -1,77 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { RequireAdmin } from "@/components/admin/RequireAdmin";
-import { createAdminHubConnection } from "@/lib/signalr/adminHub";
-import { getAdminOrders, updateOrderStatus, AdminOrderSummary } from "@/lib/api/orders";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { RefreshCw } from "lucide-react";
+
+import { RequireAdmin } from "@/components/admin/RequireAdmin";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { createAdminHubConnection, isAuthError } from "@/lib/signalr/adminHub";
+import { getAdminOrders, updateOrderStatus, AdminOrderSummary } from "@/lib/api/orders";
+import { useAuthStore } from "@/store/authStore";
+
+const COLUMNS = [
+  { status: "paid", label: "New & Paid" },
+  { status: "in_kitchen", label: "In the Kitchen" },
+  { status: "ready", label: "Ready" },
+];
 
 const NEXT_ACTION: Record<string, { label: string; nextStatus: string } | undefined> = {
-  PendingPayment: { label: "Confirm Paid", nextStatus: "Paid" },
-  Paid: { label: "Mark Baking", nextStatus: "InKitchen" },
-  InKitchen: { label: "Mark Ready", nextStatus: "Ready" },
-  Ready: { label: "Complete", nextStatus: "Completed" },
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  PendingPayment: "Pending Payment",
-  Paid: "Paid & Confirmed",
-  InKitchen: "In Kitchen",
-  Ready: "Ready for Pickup/Delivery",
-  Completed: "Completed",
+  paid: { label: "Start Baking", nextStatus: "in_kitchen" },
+  in_kitchen: { label: "Mark Ready", nextStatus: "ready" },
+  ready: { label: "Complete", nextStatus: "completed" },
 };
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
   const [connected, setConnected] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [reconnectTick, setReconnectTick] = useState(0);
+
+  const loadOrders = useCallback(() => {
+    getAdminOrders().then(setOrders).catch(() => toast.error("Could not load orders."));
+  }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    
-    // Attempt to load past orders (this will fail gracefully until backend endpoint exists)
-    getAdminOrders().then(data => { if(isMounted) setOrders(data); }).catch(() => console.log("Waiting for backend endpoint"));
-
+    loadOrders();
     const connection = createAdminHubConnection();
 
-    connection.on("ReceiveNewOrder", (payload: { orderId: string; orderNumber: string; totalAmount: number; status: string }) => {
-      setOrders((prev) => [
-        { orderId: payload.orderId, orderNumber: payload.orderNumber, totalAmount: payload.totalAmount, status: payload.status, createdAt: new Date().toISOString() },
-        ...prev,
-      ]);
-      toast.success(`New order: ${payload.orderNumber}`, { icon: "🔥" });
-    });
-
-    async function startHub() {
-      try {
-        await connection.start();
-        if (isMounted) setConnected(true);
-      } catch (err: any) {
-        if (err.message?.includes("stop() was called")) return;
-        if (isMounted) setConnected(false);
+    function handleAuthFailure(err?: unknown) {
+      if (!err || isAuthError(err)) {
+        toast.error("Your session expired. Please sign in again.");
+        useAuthStore.getState().logout();
+        router.push("/admin/login");
       }
     }
 
-    startHub();
-    return () => { isMounted = false; connection.stop(); };
-  }, []);
+    connection.on("ReceiveNewOrder", (p: { orderId: string; orderNumber: string; totalAmount: number; status: string }) => {
+      setOrders((prev) => [{ orderId: p.orderId, orderNumber: p.orderNumber, totalAmount: p.totalAmount, status: p.status, createdAt: new Date().toISOString() }, ...prev]);
+      toast.success(`New order: ${p.orderNumber}`);
+    });
+    connection.on("OrderPaidUpdate", (p: { orderId: string; status: string }) => {
+      setOrders((prev) => prev.map((o) => (o.orderId === p.orderId ? { ...o, status: p.status } : o)));
+    });
+    connection.on("OrderStatusUpdated", (p: { orderId: string; status: string }) => {
+      setOrders((prev) => prev.map((o) => (o.orderId === p.orderId ? { ...o, status: p.status } : o)));
+    });
+
+    connection.onreconnecting(() => setConnected(false));
+    connection.onreconnected(() => setConnected(true));
+    connection.onclose((err) => { setConnected(false); if (err && isAuthError(err)) handleAuthFailure(err); });
+
+    connection.start()
+      .then(() => setConnected(true))
+      .catch((err) => { setConnected(false); if (isAuthError(err)) handleAuthFailure(err); });
+
+    return () => { connection.stop(); };
+  }, [loadOrders, router, reconnectTick]);
+
+  const stats = useMemo(() => {
+    const today = new Date().toDateString();
+    const todaysOrders = orders.filter((o) => new Date(o.createdAt).toDateString() === today);
+    return {
+      todayCount: todaysOrders.length,
+      todayRevenue: todaysOrders.reduce((s, o) => s + o.totalAmount, 0),
+      pending: orders.filter((o) => o.status === "paid" || o.status === "in_kitchen").length,
+      total: orders.length,
+    };
+  }, [orders]);
 
   async function handleAdvance(order: AdminOrderSummary) {
     const action = NEXT_ACTION[order.status];
     if (!action) return;
-
     setUpdatingId(order.orderId);
     try {
-      // NOTE: Requires PUT /api/v1/admin/orders/{id}/status backend endpoint to be built next
-      // await updateOrderStatus(order.orderId, action.nextStatus);
-      
-      // Optimistic UI Update
+      await updateOrderStatus(order.orderId, action.nextStatus);
       setOrders((prev) => prev.map((o) => (o.orderId === order.orderId ? { ...o, status: action.nextStatus } : o)));
-      toast.success(`${order.orderNumber} → ${STATUS_LABEL[action.nextStatus]}`);
+      toast.success(`${order.orderNumber} moved forward`);
     } catch {
-      toast.error("Backend endpoint for status update not yet implemented.");
+      toast.error("Could not update status."); // a 401 here is already handled globally by the Axios interceptor
     } finally {
       setUpdatingId(null);
     }
@@ -79,79 +97,81 @@ export default function AdminDashboardPage() {
 
   return (
     <RequireAdmin>
-      <div className="mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Kitchen Dashboard</h1>
-            <p className="text-neutral-500 mt-1">Live order feed & fulfillment tracking.</p>
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+        <AdminShell connected={connected}>
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="font-serif text-3xl font-semibold text-chocolate">Live Orders</h1>
+              <p className="mt-1 text-sm text-chocolate/50">Real-time kitchen order board</p>
+            </div>
+            {!connected && (
+              <button
+                onClick={() => setReconnectTick((t) => t + 1)}
+                className="flex items-center gap-2 rounded-full border border-chocolate/15 px-4 py-2 text-sm text-chocolate transition hover:bg-vanilla/50"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Reconnect
+              </button>
+            )}
           </div>
-          <div className="flex flex-col items-end gap-3">
-             <div className="flex items-center gap-2 text-sm font-medium">
-               <span className={`relative flex h-3 w-3`}>
-                 {connected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-                 <span className={`relative inline-flex rounded-full h-3 w-3 ${connected ? "bg-green-500" : "bg-red-500"}`}></span>
-               </span>
-               {connected ? "Live Feed Active" : "Offline"}
-             </div>
-             <Link href="/admin/catalog" className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 shadow-sm">
-               Manage Menu & Prices
-             </Link>
-          </div>
-        </div>
 
-        {orders.length === 0 ? (
-          <div className="h-full min-h-[300px] flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-xl text-neutral-400 mt-10">
-             <span className="text-4xl mb-4">🍽️</span>
-             <p>Kitchen is quiet. Waiting for new orders...</p>
+          <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <StatCard label="Orders Today" value={stats.todayCount} />
+            <StatCard label="Revenue Today" value={`R${stats.todayRevenue.toFixed(2)}`} />
+            <StatCard label="In Progress" value={stats.pending} />
+            <StatCard label="All-Time" value={stats.total} />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <AnimatePresence>
-              {orders.map((order) => {
-                const action = NEXT_ACTION[order.status];
-                return (
-                  <motion.div
-                    key={order.orderId}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="rounded-2xl border border-neutral-200/70 bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-col h-full justify-between">
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                           <p className="font-mono font-bold">{order.orderNumber}</p>
-                           <span className="text-xs font-semibold px-2 py-1 rounded bg-neutral-100 text-neutral-700 uppercase tracking-wider">
-                              {STATUS_LABEL[order.status] ?? order.status}
-                           </span>
-                        </div>
-                        <p className="text-2xl font-semibold my-4">R{order.totalAmount.toFixed(2)}</p>
-                      </div>
-                      
-                      <div className="border-t border-neutral-100 pt-4 mt-auto">
-                        {action ? (
-                          <button
-                            onClick={() => handleAdvance(order)}
-                            disabled={updatingId === order.orderId}
-                            className="w-full rounded-lg bg-neutral-900 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:bg-neutral-300"
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {COLUMNS.map((col) => {
+              const columnOrders = orders.filter((o) => o.status === col.status);
+              return (
+                <div key={col.status} className="rounded-3xl bg-vanilla/30 p-4">
+                  <div className="mb-3 flex items-center justify-between px-1">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-chocolate/60">{col.label}</h2>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-chocolate/50">{columnOrders.length}</span>
+                  </div>
+                  <div className="space-y-3">
+                    <AnimatePresence>
+                      {columnOrders.map((order) => {
+                        const action = NEXT_ACTION[order.status];
+                        return (
+                          <motion.div
+                            key={order.orderId}
+                            layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className="rounded-2xl border border-chocolate/8 bg-white p-4 shadow-soft"
                           >
-                            {updatingId === order.orderId ? "Updating..." : action.label}
-                          </button>
-                        ) : (
-                          <div className="w-full text-center py-2.5 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg">
-                            ✓ Fulfillment Complete
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                            <p className="font-medium text-chocolate">{order.orderNumber}</p>
+                            <p className="mt-0.5 text-sm text-chocolate/50">R{order.totalAmount.toFixed(2)}</p>
+                            {action && (
+                              <button
+                                onClick={() => handleAdvance(order)}
+                                disabled={updatingId === order.orderId}
+                                className="mt-3 w-full rounded-full bg-chocolate py-2 text-xs font-medium text-cream transition hover:bg-chocolate-light disabled:opacity-50"
+                              >
+                                {updatingId === order.orderId ? "..." : action.label}
+                              </button>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                    {columnOrders.length === 0 && <p className="px-1 py-6 text-center text-xs text-chocolate/30">Nothing here</p>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
+        </AdminShell>
       </div>
     </RequireAdmin>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-chocolate/8 bg-white p-4 shadow-soft">
+      <p className="text-[11px] uppercase tracking-wider text-chocolate/40">{label}</p>
+      <p className="mt-1 font-serif text-2xl font-semibold text-chocolate">{value}</p>
+    </div>
   );
 }

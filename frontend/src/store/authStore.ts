@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { isTokenExpired } from "@/lib/utils/jwt";
 
 interface AuthState {
   accessToken: string | null;
@@ -9,6 +10,7 @@ interface AuthState {
   logout: () => void;
   isSuperAdmin: () => boolean;
   isCustomer: () => boolean;
+  hasValidSession: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -21,6 +23,10 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ accessToken: null, email: null, roles: [] }),
       isSuperAdmin: () => get().roles.includes("SuperAdmin"),
       isCustomer: () => get().roles.includes("Customer"),
+      hasValidSession: () => {
+        const token = get().accessToken;
+        return !!token && !isTokenExpired(token);
+      },
     }),
     { name: "luu-tasty-treats-auth" }
   )

@@ -78,7 +78,7 @@ export function Navbar() {
                 <CakeSlice className="h-6 w-6 stroke-[1.5px] transition-colors group-hover:text-gray-500" />
               </motion.div>
             </Link>
-
+              <Link href="/policies" className="transition hover:text-berry-dark">Policies</Link>
             {/* Cart Icon with Notification Badge */}
             <Link href="/cart" className="group relative flex items-center">
               <motion.div 
