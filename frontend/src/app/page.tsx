@@ -63,11 +63,11 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative w-full max-w-md lg:max-w-lg"
         >
-          {/* Aesthetic Image Placeholder - Replace src with an actual cake photo */}
+          {/* Aesthetic Image Container */}
           <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-vanilla/50 shadow-2xl">
             <img 
-              src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1000&auto=format&fit=crop" 
-              alt="Signature handcrafted cake" 
+              src="/images/cake.png" 
+              alt="Signature handcrafted cake by Luu Tasty Treats" 
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
           </div>
@@ -93,9 +93,8 @@ export default function Home() {
             </Link>
           </div>
           
-          {/* The display case component will render here automatically once the API connects */}
           <div className="mt-12">
-            {/* If you have a FeaturedCakes component, drop it here */}
+            {/* Display case component renders here */}
           </div>
         </div>
       </section>
