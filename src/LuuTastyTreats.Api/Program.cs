@@ -100,16 +100,12 @@ builder.Services.AddAuthorization(options => {
 });
 
 var app = builder.Build();
-
-// 10. Database Seeder
-if (args.Contains("--seed")) {
-    using var scope = app.Services.CreateScope();
+// 10. Database Seeder (Runs automatically on startup)
+using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await DatabaseSeeder.SeedAsync(db, app.Configuration, logger);
-    return; // Exit after seeding is complete
 }
-
 // 11. Middleware Pipeline
 app.UseCors("AllowFrontend");
 
