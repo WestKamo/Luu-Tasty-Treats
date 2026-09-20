@@ -40,3 +40,10 @@ export function isAuthError(error: unknown): boolean {
   }
   return false;
 }
+
+export function isAuthError(error: unknown): boolean {
+  if (typeof error === "object" && error !== null && "status" in error) {
+    return (error as { status: number }).status === 401 || (error as { status: number }).status === 403;
+  }
+  return false;
+}

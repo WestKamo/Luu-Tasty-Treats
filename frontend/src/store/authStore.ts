@@ -5,6 +5,7 @@ import { isTokenExpired } from "@/lib/utils/jwt";
 interface AuthState {
   accessToken: string | null;
   setAccessToken: (token: string | null) => void;
+  setAccessToken: (token: string | null) => void;
   email: string | null;
   roles: string[];
   setSession: (accessToken: string, email: string, roles: string[]) => void;
