@@ -1,10 +1,10 @@
 import { apiClient } from "./client";
 import { PayFastInitiateResponse } from "@/types/orders";
 
-// NOTE: /api/v1/payments/payfast does not exist on the backend yet.
+// NOTE: /api/payments/payfast does not exist on the backend yet.
 // This call will 404 until that endpoint is built — wire it up before testing checkout end-to-end.
 export async function initiatePayFastPayment(orderNumber: string) {
-  const { data } = await apiClient.post<PayFastInitiateResponse>("/api/v1/payments/payfast", {
+  const { data } = await apiClient.post<PayFastInitiateResponse>("/api/payments/payfast", {
     orderNumber,
   });
   return data;

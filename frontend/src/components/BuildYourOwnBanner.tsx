@@ -11,7 +11,7 @@ export function BuildYourOwnBanner() {
   async function handleSubmit() {
     setSubmitting(true);
     try {
-      await apiClient.post("/api/v1/custom-inquiries", { customerName: name, customerEmail: email, details });
+      await apiClient.post("/api/custom-inquiries", { customerName: name, customerEmail: email, details });
       toast.success("Inquiry sent! We'll be in touch.");
       setOpen(false); setName(""); setEmail(""); setDetails("");
     } catch { toast.error("Could not send inquiry."); } finally { setSubmitting(false); }
