@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
         {/* Image panel — replacing Spline with lulu.png */}
         <div className="relative h-48 w-full md:h-auto md:min-h-[520px]">
           <img 
-            src="/images/lulu.png" 
+            src="/lulu.png" 
             alt="Luu Tasty Treats Baker" 
             className="h-full w-full object-cover"
           />
