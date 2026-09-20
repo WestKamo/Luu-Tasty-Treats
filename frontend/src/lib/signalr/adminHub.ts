@@ -1,6 +1,22 @@
 import * as signalR from "@microsoft/signalr";
 import { useAuthStore } from "@/store/authStore";
 
+export interface OrderPaidUpdatePayload {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  paidAmount: number;
+}
+
+// Speculative — not yet broadcast by the backend (order placement doesn't push to SignalR today).
+// Wired up now so the dashboard is forward-compatible the moment it's added.
+export interface ReceiveNewOrderPayload {
+  orderId: string;
+  orderNumber: string;
+  totalAmount: number;
+  status: string;
+}
+
 export function createAdminHubConnection(): signalR.HubConnection {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -8,12 +24,7 @@ export function createAdminHubConnection(): signalR.HubConnection {
     .withUrl(`${apiUrl}/hubs/admin-orders`, {
       accessTokenFactory: () => useAuthStore.getState().accessToken ?? "",
     })
-    .withAutomaticReconnect([0, 2000, 5000, 10000, 15000])
+    .withAutomaticReconnect()
     .configureLogging(signalR.LogLevel.Warning)
     .build();
-}
-
-export function isAuthError(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err);
-  return message.includes("401") || message.toLowerCase().includes("unauthorized");
 }
