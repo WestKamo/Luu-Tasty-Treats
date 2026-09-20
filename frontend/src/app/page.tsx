@@ -36,7 +36,7 @@ export default function Home() {
             <span className="italic text-chocolate/80">baked to perfection.</span>
           </motion.h1>
           <motion.p variants={fadeInUp} className="mt-6 max-w-lg text-lg leading-relaxed text-chocolate/70">
-            Luu Tasty Treats began as a small kitchen dream. Today, we still bake the exact same way: made to order, by hand, for the celebrations that matter most to you.
+            Every creation at Luu Tasty Treats is a personal labor of love. From the first whisk to the final garnish, your cakes are handcrafted entirely by the founder to make your celebrations unforgettable.
           </motion.p>
           
           <motion.div variants={fadeInUp} className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
@@ -48,7 +48,7 @@ export default function Home() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link 
-              href="/about" 
+              href="/owner" 
               className="rounded-full px-8 py-4 font-medium tracking-wide text-chocolate transition-colors hover:bg-chocolate/5"
             >
               Meet the Baker
