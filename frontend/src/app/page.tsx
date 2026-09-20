@@ -63,10 +63,10 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative w-full max-w-md lg:max-w-lg"
         >
-          {/* Aesthetic Image Container */}
+          {/* Aesthetic Image Container using your local public file */}
           <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-vanilla/50 shadow-2xl">
             <img 
-              src="/images/cake.png" 
+              src="/cake.png" 
               alt="Signature handcrafted cake by Luu Tasty Treats" 
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
