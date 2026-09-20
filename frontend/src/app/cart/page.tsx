@@ -46,7 +46,7 @@ export default function CartPage() {
   const isDelivery = deliveryMethod === "delivery";
   const total = subtotal + (isDelivery ? DELIVERY_FEE : 0);
 
-  async function onSubmit(values: CheckoutFormValues) {
+  async function onSubmit(values: any) {
     if (lines.length === 0) {
       toast.error("Your bag is empty.");
       return;
