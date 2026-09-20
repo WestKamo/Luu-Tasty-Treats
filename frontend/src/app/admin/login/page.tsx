@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +26,8 @@ export default function AdminLoginPage() {
     try {
       const result = await adminLogin(values);
       setSession(result.accessToken, result.email, result.roles);
-      // Smooth, immediate transition without the fake loading screen
+      
+      // Instant transition directly to dashboard. No fake loading screens.
       router.push("/admin/dashboard");
     } catch {
       toast.error("Invalid email or password.");
@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
     <div className="min-h-[calc(100vh-8rem)] px-4 pb-10 pt-10 sm:px-6">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[2rem] border border-chocolate/10 bg-white shadow-2xl md:grid-cols-2">
         
-        {/* Image panel — replacing Spline with lulu.png */}
+        {/* Image panel using lulu.png */}
         <div className="relative h-48 w-full md:h-auto md:min-h-[520px]">
           <img 
             src="/lulu.png" 
