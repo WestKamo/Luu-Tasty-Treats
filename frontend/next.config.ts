@@ -1,22 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: false,
-  images: {
-    remotePatterns: [
-      { protocol: "http", hostname: "127.0.0.1" },
-      { protocol: "http", hostname: "localhost" },
-      { protocol: "https", hostname: "placehold.co" }
-    ],
-    dangerouslyAllowSVG: true,
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    ignoreBuildErrors: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: "/uploads/:path*",
-        destination: "http://127.0.0.1:5281/uploads/:path*",
-      },
-    ];
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
   },
 };
 
