@@ -16,7 +16,12 @@ export interface ReceiveNewOrderPayload {
   totalAmount: number;
   status: string;
 }
-
+export function isAuthError(error: unknown): boolean {
+  if (typeof error === "object" && error !== null && "status" in error) {
+    return (error as { status: number }).status === 401 || (error as { status: number }).status === 403;
+  }
+  return false;
+}
 export function createAdminHubConnection(): signalR.HubConnection {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
