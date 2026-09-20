@@ -35,7 +35,10 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddSignalR();
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowFrontend", policy => {
-        policy.SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -58,7 +61,6 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 // 7. Request Validation
 builder.Services.AddScoped<IValidator<AdminLoginRequest>, AdminLoginRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateCakeRequest>, UpdateCakeRequestValidator>();
-builder.Services.AddScoped<IValidator<CreateCakeRequest>, CreateCakeRequestValidator>();
 builder.Services.AddScoped<IValidator<CreateCakeRequest>, CreateCakeRequestValidator>();
 builder.Services.AddScoped<IValidator<PlaceOrderRequest>, PlaceOrderRequestValidator>();
 
@@ -110,13 +112,16 @@ if (args.Contains("--seed")) {
 
 // 11. Middleware Pipeline
 app.UseCors("AllowFrontend");
+
 var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
     RequestPath = "/uploads"
 }); // Allows the frontend to load uploaded images from the server
+
 app.UseAuthentication();
 app.UseAuthorization();
 
