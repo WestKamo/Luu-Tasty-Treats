@@ -21,7 +21,10 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Database Configuration
-var connectionString = builder.Configuration.GetConnectionString("CakeOrderingDb");
+// Render commonly exposes its PostgreSQL connection as DATABASE_URL. Prefer the
+// normal ASP.NET configuration key, but support DATABASE_URL as a deployment-safe
+// fallback so the application does not silently start with an empty connection string.
+var connectionString = ResolveConnectionString(builder.Configuration);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString, npgsql => {
         npgsql.EnableRetryOnFailure(3);
@@ -100,12 +103,16 @@ builder.Services.AddAuthorization(options => {
 });
 
 var app = builder.Build();
-// 10. Database Seeder (Runs automatically on startup)
+
+// 10. Apply migrations before querying or seeding. This is required on a fresh
+// Render database and makes startup seeding safe after deployment.
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    await db.Database.MigrateAsync();
     await DatabaseSeeder.SeedAsync(db, app.Configuration, logger);
 }
+
 // 11. Middleware Pipeline
 app.UseCors("AllowFrontend");
 
@@ -123,9 +130,8 @@ app.UseAuthorization();
 
 // 12. Health Checks
 app.MapGet("/", () => "Cake Ordering API is alive.");
-app.MapGet("/health/db", async (IConfiguration config) => {
-    var connString = config.GetConnectionString("CakeOrderingDb");
-    await using var conn = new NpgsqlConnection(connString);
+app.MapGet("/health/db", async () => {
+    await using var conn = new NpgsqlConnection(connectionString);
     await conn.OpenAsync();
     return Results.Ok(new { database = "connected", server = conn.Host });
 });
@@ -140,3 +146,36 @@ app.MapPaymentsEndpoints();
 app.MapHub<AdminOrderHub>("/hubs/admin-orders");
 
 app.Run();
+
+static string ResolveConnectionString(IConfiguration configuration)
+{
+    var configured = configuration.GetConnectionString("CakeOrderingDb");
+    if (!string.IsNullOrWhiteSpace(configured))
+        return configured;
+
+    var renderDatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrWhiteSpace(renderDatabaseUrl))
+    {
+        if (!Uri.TryCreate(renderDatabaseUrl, UriKind.Absolute, out var uri) ||
+            string.IsNullOrWhiteSpace(uri.Host))
+            throw new InvalidOperationException("DATABASE_URL is not a valid PostgreSQL URL.");
+
+        var builder = new NpgsqlConnectionStringBuilder {
+            Host = uri.Host,
+            Port = uri.IsDefaultPort ? 5432 : uri.Port,
+            Database = uri.AbsolutePath.Trim('/'),
+            Username = Uri.UnescapeDataString(uri.UserInfo.Split(':')[0]),
+            SslMode = SslMode.Require,
+            TrustServerCertificate = true
+        };
+
+        var separator = uri.UserInfo.IndexOf(':');
+        if (separator >= 0)
+            builder.Password = Uri.UnescapeDataString(uri.UserInfo[(separator + 1)..]);
+
+        return builder.ConnectionString;
+    }
+
+    throw new InvalidOperationException(
+        "Database connection string is missing. Set ConnectionStrings__CakeOrderingDb or DATABASE_URL in Render environment variables.");
+}
