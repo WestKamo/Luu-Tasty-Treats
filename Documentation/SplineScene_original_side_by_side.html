@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spline components — original code side-by-side</title><style>body{margin:0;background:#f5f1e9;color:#33271f;font-family:system-ui,sans-serif}header{padding:22px 30px;border-bottom:1px solid #dbcbb7}h1{margin:0;font-size:24px}p{max-width:1100px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px}section{min-width:0;background:white;border:1px solid #decfba;border-radius:8px;overflow:hidden}h2{font-size:15px;margin:0;padding:14px;background:#eee2d1}pre{overflow:auto;font-size:12px;line-height:1.55;padding:18px;margin:0;tab-size:2;white-space:pre}.note{margin:18px 30px;background:white;padding:16px;border-left:4px solid #784531}@media(max-width:820px){.grid{grid-template-columns:1fr}}</style></head><body><header><h1>Original SplineScene.tsx files — full side-by-side comparison</h1><p>Unmodified source files from the uploaded repository, before any cleanup. Left is a decorative SVG (no real Spline). Right uses React.lazy, a fallback, and an error boundary, but no explicit SSR boundary.</p></header><div class="grid"><section><h2>frontend/src/components/SplineScene.tsx — 36 lines</h2><pre>&quot;use client&quot;;
+
+import { motion } from &quot;framer-motion&quot;;
+
+export function SplineScene() {
+  return (
+    &lt;div className=&quot;relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-vanilla via-cream to-berry/30&quot;&gt;
+      &lt;motion.div
+        className=&quot;absolute -left-10 top-10 h-40 w-40 rounded-full bg-berry/30 blur-3xl&quot;
+        animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: &quot;easeInOut&quot; }}
+      /&gt;
+      &lt;motion.div
+        className=&quot;absolute -right-8 bottom-10 h-48 w-48 rounded-full bg-chocolate/10 blur-3xl&quot;
+        animate={{ y: [0, -18, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: &quot;easeInOut&quot; }}
+      /&gt;
+
+      &lt;motion.div
+        className=&quot;relative z-10 text-center&quot;
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: &quot;easeInOut&quot; }}
+      &gt;
+        &lt;svg viewBox=&quot;0 0 200 200&quot; className=&quot;mx-auto h-28 w-28 drop-shadow-xl&quot;&gt;
+          &lt;ellipse cx=&quot;100&quot; cy=&quot;175&quot; rx=&quot;60&quot; ry=&quot;8&quot; fill=&quot;#4A2F23&quot; opacity=&quot;0.1&quot; /&gt;
+          &lt;rect x=&quot;50&quot; y=&quot;120&quot; width=&quot;100&quot; height=&quot;40&quot; rx=&quot;10&quot; fill=&quot;#E8A0BF&quot; /&gt;
+          &lt;rect x=&quot;60&quot; y=&quot;90&quot; width=&quot;80&quot; height=&quot;35&quot; rx=&quot;10&quot; fill=&quot;#F5E6C8&quot; /&gt;
+          &lt;rect x=&quot;70&quot; y=&quot;62&quot; width=&quot;60&quot; height=&quot;32&quot; rx=&quot;10&quot; fill=&quot;#FBF6EF&quot; stroke=&quot;#E8A0BF&quot; strokeWidth=&quot;2&quot; /&gt;
+          &lt;rect x=&quot;97&quot; y=&quot;35&quot; width=&quot;6&quot; height=&quot;27&quot; rx=&quot;3&quot; fill=&quot;#C97B9C&quot; /&gt;
+          &lt;ellipse cx=&quot;100&quot; cy=&quot;33&quot; rx=&quot;6&quot; ry=&quot;9&quot; fill=&quot;#F5C97A&quot; /&gt;
+        &lt;/svg&gt;
+        &lt;p className=&quot;mt-4 font-serif text-lg text-chocolate/70&quot;&gt;Luu Tasty Treats&lt;/p&gt;
+      &lt;/motion.div&gt;
+    &lt;/div&gt;
+  );
+}
+</pre></section><section><h2>frontend/src/components/auth/SplineScene.tsx — 40 lines</h2><pre>&quot;use client&quot;;
+import { Component, Suspense, lazy, type ErrorInfo, type ReactNode } from &quot;react&quot;;
+
+const Spline = lazy(() =&gt; import(&quot;@splinetool/react-spline&quot;));
+const SPLINE_SCENE_URL = process.env.NEXT_PUBLIC_SPLINE_SCENE_URL?.trim() ?? &quot;&quot;;
+
+export function SplineScene() {
+  if (!SPLINE_SCENE_URL) return &lt;SplineFallback /&gt;;
+  return (
+    &lt;SplineErrorBoundary&gt;
+      &lt;Suspense fallback={&lt;SplineFallback /&gt;}&gt;
+        &lt;Spline className=&quot;h-full w-full&quot; scene={SPLINE_SCENE_URL} /&gt;
+      &lt;/Suspense&gt;
+    &lt;/SplineErrorBoundary&gt;
+  );
+}
+
+function SplineFallback() {
+  return (
+    &lt;div className=&quot;flex h-full w-full items-center justify-center bg-gradient-to-br from-vanilla via-cream to-berry/30&quot; role=&quot;img&quot; aria-label=&quot;Luu Tasty Treats decorative background&quot;&gt;
+      &lt;div className=&quot;text-center&quot;&gt;
+        &lt;div className=&quot;relative mx-auto mb-5 h-24 w-24&quot;&gt;
+          &lt;div className=&quot;absolute inset-0 animate-ping rounded-full bg-berry/10&quot; /&gt;
+          &lt;div className=&quot;relative h-full w-full rounded-full bg-berry/20 backdrop-blur-sm&quot; /&gt;
+        &lt;/div&gt;
+        &lt;p className=&quot;font-serif text-xl text-chocolate/60&quot;&gt;Luu Tasty Treats&lt;/p&gt;
+        &lt;p className=&quot;mt-1 text-xs uppercase tracking-[0.25em] text-chocolate/35&quot;&gt;Preparing something delicious&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+class SplineErrorBoundary extends Component&lt;{ children: ReactNode }, { hasError: boolean }&gt; {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (process.env.NODE_ENV !== &quot;production&quot;) console.error(&quot;Spline scene failed to load:&quot;, error, errorInfo);
+  }
+  render() { return this.state.hasError ? &lt;SplineFallback /&gt; : this.props.children; }
+}
+</pre></section></div><div class="note"><strong>Comparison:</strong> Neither uses <code>next/dynamic(..., {ssr:false})</code>. The left is a static SVG (always renders but never loads a Spline scene); the right uses <code>React.lazy</code> plus Suspense and its error boundary. The right shows a CSS fallback when the scene URL is absent, and for exceptions caught by its error boundary, but does not ensure SSR-safe loading or handle every scene-network failure.</div></body></html>
