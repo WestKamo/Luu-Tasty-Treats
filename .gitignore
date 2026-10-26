@@ -499,3 +499,5 @@ frontend/.env.local
 **/appsettings.Development.local.json
 **/service-account*.json
 **/firebase-admin*.json
+firebase-credentials.json
+src/LuuTastyTreats.Api/firebase-credentials.json
