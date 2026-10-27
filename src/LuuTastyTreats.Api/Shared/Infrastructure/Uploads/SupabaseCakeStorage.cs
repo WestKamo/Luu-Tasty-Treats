@@ -47,7 +47,6 @@ public sealed class SupabaseCakeStorage
         }
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var objectPath = $"cakes/{cakeId:D}/{imageId:N}{extension}";
         var encodedPath = $"cakes/{cakeId:D}/{imageId:N}{extension}";
         var uploadUrl =
             $"{projectUrl}/storage/v1/object/{Uri.EscapeDataString(bucket)}/{encodedPath}";
@@ -107,9 +106,21 @@ public sealed class SupabaseCakeStorage
             return true; // Legacy relative local upload.
 
         var configuredProject = (_config["SUPABASE_URL"] ?? "").Trim().TrimEnd('/');
-        if (!Uri.TryCreate(configuredProject, UriKind.Absolute, out var projectUri) ||
-            !Uri.Compare(projectUri, imageUri, UriComponents.SchemeAndServer,
-                UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase).Equals(0))
+        if (!Uri.TryCreate(configuredProject, UriKind.Absolute, out var projectUri))
+        {
+            // Refuse to abandon a Supabase-hosted object when the corresponding
+            // backend credentials have been accidentally removed.
+            if (imageUri.Host.EndsWith(".supabase.co", StringComparison.OrdinalIgnoreCase) &&
+                imageUri.AbsolutePath.StartsWith("/storage/v1/object/public/", StringComparison.Ordinal))
+            {
+                _logger.LogError("Cannot delete a Supabase image: SUPABASE_URL is not configured.");
+                return false;
+            }
+            return true;
+        }
+
+        if (Uri.Compare(projectUri, imageUri, UriComponents.SchemeAndServer,
+                UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) != 0)
             return true; // Other host: existing Cloudinary or unrelated image.
 
         if (!TryGetSettings(out var projectUrl, out var secretKey, out var bucket))
@@ -169,6 +180,7 @@ public sealed class SupabaseCakeStorage
             && string.IsNullOrEmpty(uri.UserInfo)
             && (uri.AbsolutePath == "/" || uri.AbsolutePath == "")
             && !string.IsNullOrWhiteSpace(secretKey)
+            && !secretKey.StartsWith("sb_publishable_", StringComparison.Ordinal)
             && Regex.IsMatch(bucket, @"^[A-Za-z0-9][A-Za-z0-9_-]*$");
     }
 
