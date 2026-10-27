@@ -4,7 +4,8 @@ using LuuTastyTreats.Api.Shared.Infrastructure.Uploads;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Google.Cloud.Storage.V1; // Added Firebase Storage
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 
 namespace LuuTastyTreats.Api.Modules.Catalog.Features.UploadCakeImage;
 
