@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Github, Heart, Instagram, MessageCircle } from "lucide-react";
+import { ArrowUpRight, Heart, MessageCircle } from "lucide-react";
 
 export function SiteFooter() {
   return (
