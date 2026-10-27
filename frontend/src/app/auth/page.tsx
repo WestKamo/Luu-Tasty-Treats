@@ -10,7 +10,6 @@ import { customerLogin, customerRegister, forgotPassword, logout } from "@/lib/a
 export default function AuthPage() {
   const [view, setView] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
-  const [accessGranted, setAccessGranted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -22,7 +21,6 @@ export default function AuthPage() {
     try {
       if (view === "login") {
         await customerLogin(email, password);
-        setAccessGranted(true);
         router.push("/cart");
       } else if (view === "register") {
         await customerRegister(firstName, lastName, email, password);
@@ -132,16 +130,6 @@ export default function AuthPage() {
         </div>
       </main>
 
-      <AnimatePresence>
-        {accessGranted && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-chocolate">
-            <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} className="text-center text-cream">
-              <motion.div className="mx-auto mb-4 h-14 w-14 rounded-full border-2 border-berry" animate={{ rotate: 360 }} transition={{ duration: 0.8, ease: "easeInOut" }} />
-              <p className="font-serif text-lg tracking-widest">ACCESS GRANTED</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

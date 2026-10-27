@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { createCakeSchema, CreateCakeFormValues } from "@/lib/validation/schemas";
-import { createCake, uploadCakeImage } from "@/lib/api/catalog";
+import { createCake, uploadCakeImage, describeCakeApiError } from "@/lib/api/catalog";
 
 interface Props { onClose: () => void; onCreated: () => void; }
 
@@ -19,6 +19,8 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
   const [progress, setProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<CreateCakeFormValues>({ resolver: zodResolver(createCakeSchema) });
@@ -27,12 +29,14 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
     setCreating(true);
     try {
       const result = await createCake({ name: values.name, description: values.description || null, basePrice: values.basePrice, categoryId: null });
+      if (!result.cakeId) throw new Error("No cakeId returned from API.");
       setNewCakeId(result.cakeId);
       setNewCakeName(result.name);
       toast.success("Cake saved — now add a photo");
+      onCreated(); // Show the saved inactive draft in Admin even when upload fails.
       setStep(2);
-    } catch {
-      toast.error("Could not save cake. Check the form and try again.");
+    } catch (error) {
+      toast.error(describeCakeApiError(error, "create"));
     } finally {
       setCreating(false);
     }
@@ -40,8 +44,10 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
 
   async function handleFile(file: File) {
     if (!newCakeId) return;
-    if (!file.type.startsWith("image/")) { toast.error("Please select an image file."); return; }
-    setPreviewUrl(URL.createObjectURL(file));
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("Choose a JPG, PNG, or WebP image."); return; }
+    setSelectedFile(file);
+    setUploadError(null);
+    setPreviewUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return URL.createObjectURL(file); });
     setUploading(true);
     setProgress(0);
     try {
@@ -49,8 +55,10 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
       toast.success(`${newCakeName} is now live!`);
       onCreated();
       setTimeout(onClose, 700);
-    } catch {
-      toast.error("Image upload failed. You can retry from the catalog list.");
+    } catch (error) {
+      const message = describeCakeApiError(error, "upload");
+      setUploadError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -90,6 +98,12 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
                 {previewUrl ? <img src={previewUrl} alt="Preview" className="h-full w-full rounded-4xl object-cover" /> : <><p className="font-medium text-chocolate/60">Drag & drop an image</p><p className="mt-1 text-xs text-chocolate/40">or click to browse</p></>}
               </div>
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFile(file); }} />
+              {uploadError && <p role="alert" className="mt-3 text-sm text-red-600">{uploadError}</p>}
+              {selectedFile && !uploading && uploadError && (
+                <button type="button" onClick={() => void handleFile(selectedFile)} className="mt-3 w-full rounded-full bg-chocolate px-4 py-3 text-sm font-semibold text-cream">
+                  Retry photo upload
+                </button>
+              )}
               {uploading && (
                 <div className="mt-4">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-chocolate/10"><motion.div className="h-full bg-berry" animate={{ width: `${progress}%` }} transition={{ ease: "easeOut" }} /></div>

@@ -8,12 +8,15 @@ import { X, Trash2, UploadCloud } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { cakeEditSchema, CakeEditFormValues } from "@/lib/validation/schemas";
-import { updateCake, uploadCakeImage, getCakeImages, deleteCakeImage, CakeImageDto } from "@/lib/api/catalog";
+import { updateCake, uploadCakeImage, getCakeImages, deleteCakeImage, CakeImageDto, describeCakeApiError } from "@/lib/api/catalog";
+import { resolveCakeImageUrl } from "@/lib/images";
 import { CakeSummary } from "@/types/catalog";
 
 export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; onClose: () => void; onSaved: () => void }) {
   const [images, setImages] = useState<CakeImageDto[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [failedFile, setFailedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CakeEditFormValues>({
     resolver: zodResolver(cakeEditSchema),
@@ -33,15 +36,21 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
   }
 
   async function handleFile(file: File) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("Choose a JPG, PNG, or WebP image."); return; }
+    setFailedFile(file);
+    setUploadError(null);
     setUploading(true);
     try {
-      const nextOrder = images.length + 1;
+      const nextOrder = images.length ? Math.max(...images.map((i) => i.displayOrder)) + 1 : 1;
       const result = await uploadCakeImage(cake.cakeId, file, nextOrder);
       setImages((prev) => [...prev, { imageId: result.imageId, imageUrl: result.imageUrl, displayOrder: nextOrder }]);
+      setFailedFile(null);
       toast.success("Photo added");
       onSaved();
-    } catch {
-      toast.error("Upload failed");
+    } catch (error) {
+      const message = describeCakeApiError(error, "upload");
+      setUploadError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -52,8 +61,8 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
       await deleteCakeImage(imageId);
       setImages((prev) => prev.filter((i) => i.imageId !== imageId));
       toast.success("Photo removed");
-    } catch {
-      toast.error("Could not remove photo");
+    } catch (error) {
+      toast.error(describeCakeApiError(error, "delete"));
     }
   }
 
@@ -94,7 +103,7 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
           <div className="grid grid-cols-3 gap-3">
             {images.map((img) => (
               <div key={img.imageId} className="group relative aspect-square overflow-hidden rounded-2xl border border-chocolate/10">
-                <img src={`${process.env.NEXT_PUBLIC_API_URL}${img.imageUrl}`} alt="" className="h-full w-full object-cover" />
+                <img src={resolveCakeImageUrl(img.imageUrl) || "/cake.png"} alt="" className="h-full w-full object-cover" />
                 <button onClick={() => handleDeleteImage(img.imageId)} className="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white group-hover:flex">
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -107,6 +116,10 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
                 onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFile(file); }} />
             </label>
           </div>
+          {uploadError && <p role="alert" className="mt-3 text-sm text-red-600">{uploadError}</p>}
+          {failedFile && !uploading && uploadError && (
+            <button type="button" onClick={() => void handleFile(failedFile)} className="mt-3 rounded-full bg-chocolate px-4 py-2 text-sm font-semibold text-cream">Retry photo upload</button>
+          )}
         </div>
       </motion.div>
     </div>

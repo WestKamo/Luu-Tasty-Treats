@@ -9,7 +9,7 @@ import { RequireAdmin } from "@/components/admin/RequireAdmin";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { CreateCakeModal } from "@/components/admin/CreateCakeModal";
 import { EditCakeDrawer } from "@/components/admin/EditCakeDrawer";
-import { getCakes } from "@/lib/api/catalog";
+import { getAdminCakes } from "@/lib/api/catalog";
 import { CakeSummary } from "@/types/catalog";
 
 export default function AdminCatalogPage() {
@@ -20,7 +20,7 @@ export default function AdminCatalogPage() {
 
   const refresh = useCallback(() => {
     setLoading(true);
-    getCakes().then(setCakes).catch(() => toast.error("Could not load the catalog.")).finally(() => setLoading(false));
+    getAdminCakes().then(setCakes).catch(() => toast.error("Could not load the catalog.")).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
