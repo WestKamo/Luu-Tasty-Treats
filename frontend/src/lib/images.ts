@@ -3,7 +3,12 @@ export function resolveCakeImageUrl(value: string | null | undefined): string | 
   const raw = value?.trim();
   if (!raw) return null;
 
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5281").replace(/\/$/, "");
+  const configuredApiBase = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+  const apiBase = configuredApiBase || (
+    process.env.NODE_ENV === "production"
+      ? "https://luu-tasty-treats-api.onrender.com"
+      : "http://localhost:5281"
+  );
 
   if (raw.startsWith("/uploads/")) {
     try {
