@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, CakeSlice, MessageCircle, Code2, Globe } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CakeSlice, MessageCircle, Code2, Mail } from "lucide-react";
+import { FacebookIcon } from "@/components/icons/FacebookIcon";
+import { bakeryContacts } from "@/lib/bakeryContacts";
 
 export default function Home() {
   return (
@@ -41,12 +43,20 @@ export default function Home() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#8e634c]">Here for your next celebration</p>
           <h2 className="mt-4 max-w-2xl font-serif text-4xl tracking-tight sm:text-6xl">Let’s make something <span className="italic text-[#9b705d]">worth sharing.</span></h2>
           <p className="mt-5 max-w-xl leading-8 text-chocolate/70">Have an idea for a custom cake or want to ask a question? Get in touch with the baker, or browse the collection to begin.</p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <a href="https://wa.me/27631713034" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-chocolate px-5 py-3 text-sm font-semibold text-cream hover:bg-chocolate-light"><MessageCircle size={17}/> WhatsApp <ArrowUpRight size={14}/></a>
-            <a href="https://www.facebook.com/search/top?q=Luu%20Tasty%20Treats" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm hover:bg-white"><Globe size={17}/> Find on Facebook <ArrowUpRight size={14}/></a>
-            <a href="https://github.com/WestKamo" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm hover:bg-white"><Code2 size={17}/> Site creator <ArrowUpRight size={14}/></a>
+          <div className="mt-9 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap" aria-label="Contact Luu Tasty Treats">
+            <a href={bakeryContacts.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-full bg-chocolate px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-chocolate-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate lg:w-auto">
+              <MessageCircle size={18} aria-hidden="true" /> WhatsApp <span className="font-normal text-cream/80">{bakeryContacts.phoneDisplay}</span>
+            </a>
+            <a href={bakeryContacts.facebook} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium text-chocolate transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate lg:w-auto" aria-label="Visit Luu Tasty Treats on Facebook">
+              <FacebookIcon className="h-5 w-5 shrink-0" /> Facebook <ArrowUpRight size={14} aria-hidden="true"/>
+            </a>
+            <a href={bakeryContacts.emailHref} className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium text-chocolate transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate lg:w-auto">
+              <Mail size={18} aria-hidden="true" /> Email the baker
+            </a>
+            <a href={bakeryContacts.developer} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium text-chocolate transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate lg:w-auto">
+              <Code2 size={18} aria-hidden="true" /> Website creator <ArrowUpRight size={14} aria-hidden="true"/>
+            </a>
           </div>
-          <p className="mt-3 text-xs text-chocolate/45">Facebook opens a search for the bakery until its official page link is confirmed.</p>
         </div>
       </section>
     </div>

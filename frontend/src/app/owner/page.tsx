@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Mail, MapPin, MessageCircle } from "lucide-react";
+import { FacebookIcon } from "@/components/icons/FacebookIcon";
+import { bakeryContacts } from "@/lib/bakeryContacts";
 
 export default function OwnerPage() {
   return (
@@ -23,9 +25,10 @@ export default function OwnerPage() {
               <p>Whether you have a design in mind or just a feeling you want to capture, we’ll work together on the details that make your celebration yours.</p>
             </div>
             <blockquote className="mt-9 border-l-2 border-[#b18168] pl-6 font-serif text-2xl italic leading-relaxed text-chocolate">“One layer, one detail, one lovely moment at a time.”</blockquote>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <a href="https://wa.me/27631713034" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-chocolate px-5 py-3 text-sm font-semibold text-cream transition hover:bg-chocolate-light"><MessageCircle size={17}/> WhatsApp Lulama <ArrowUpRight size={15}/></a>
-              <a href="mailto:lulamanguxa@gmail.com" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium transition hover:bg-white"><Mail size={17}/> Send an email</a>
+            <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Contact Lulama">
+              <a href={bakeryContacts.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-chocolate px-5 py-3 text-sm font-semibold text-cream transition hover:bg-chocolate-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate"><MessageCircle size={17} aria-hidden="true"/> WhatsApp <span className="font-normal text-cream/80">{bakeryContacts.phoneDisplay}</span></a>
+              <a href={bakeryContacts.facebook} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate"><FacebookIcon className="h-5 w-5" /> Facebook <ArrowUpRight size={15} aria-hidden="true"/></a>
+              <a href={bakeryContacts.emailHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate sm:col-span-2"><Mail size={17} aria-hidden="true"/> {bakeryContacts.email}</a>
             </div>
           </div>
         </div>
