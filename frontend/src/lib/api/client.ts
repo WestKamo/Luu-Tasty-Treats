@@ -1,7 +1,13 @@
 import axios from "axios";
 import { firebaseIdToken } from "@/lib/firebase/client";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5281";
+// Preserve configured origins. In production, never silently target the visitor's localhost.
+const configuredApiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+const apiBaseUrl = configuredApiBaseUrl || (
+  process.env.NODE_ENV === "production"
+    ? "https://luu-tasty-treats-api.onrender.com"
+    : "http://localhost:5281"
+);
 
 // Public browsing must NEVER depend on Firebase config or a Firebase session.
 export const publicApiClient = axios.create({ baseURL: apiBaseUrl });
