@@ -5,11 +5,20 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CakeSlice, ChefHat, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
-import { CakeSlice, ShoppingBag } from "lucide-react";
 
 const SECRET_CLICKS_REQUIRED = 5;
 const SECRET_CLICK_WINDOW_MS = 1500;
+
+function NavIcon({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} aria-label={label} title={label}
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-chocolate/75 transition-colors duration-200 hover:bg-chocolate/5 hover:text-chocolate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-berry-dark sm:h-11 sm:w-11">
+      {children}
+    </Link>
+  );
+}
 
 export function Navbar() {
   const router = useRouter();
@@ -20,88 +29,64 @@ export function Navbar() {
   function handleLogoClick(e: React.MouseEvent) {
     const now = Date.now();
     const recentClicks = clickTimestamps.current.filter((t) => now - t < SECRET_CLICK_WINDOW_MS);
-    const updatedClicks = [...recentClicks, now];
-    clickTimestamps.current = updatedClicks;
+    clickTimestamps.current = [...recentClicks, now];
 
-    if (updatedClicks.length >= SECRET_CLICKS_REQUIRED) {
+    // Normal brand navigation stays on /owner; only the fifth quick tap is intercepted.
+    // The shortcut never authenticates or bypasses the Admin login / role checks.
+    if (clickTimestamps.current.length >= SECRET_CLICKS_REQUIRED) {
       e.preventDefault();
       clickTimestamps.current = [];
       router.push("/admin/login");
-    } else {
-      e.preventDefault();
-      router.push("/owner");
     }
   }
 
   return (
-    <>
-      <header className="sticky top-0 z-40 border-b border-black/10 bg-cream/90 backdrop-blur-md">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link
-            href="/owner"
-            onClick={handleLogoClick}
-            className="group flex min-w-0 select-none items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3"
-          >
-            <div className="shrink-0 overflow-hidden rounded bg-black p-1 shadow-sm transition-transform duration-500 group-hover:scale-105">
-              <Image
-                src="/logo.png"
-                alt="Luu Tasty Treats Logo"
-                width={36}
-                height={36}
-                className="h-8 w-8 object-contain sm:h-10 sm:w-10"
-                priority
-              />
-            </div>
-            <span className="min-w-0 whitespace-nowrap font-serif text-[clamp(0.9rem,3.7vw,1.55rem)] font-bold tracking-tight text-black sm:tracking-wide">
-              Luu Tasty Treats
-            </span>
-          </Link>
-
-          <div className="flex shrink-0 items-center gap-4 text-black sm:gap-6 lg:gap-8">
-            <Link href="/cakes" aria-label="Browse cakes" className="group relative">
-              <motion.div
-                whileHover={{ y: -3, rotate: -8 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <CakeSlice className="h-6 w-6 stroke-[1.5px] transition-colors group-hover:text-gray-500" />
-              </motion.div>
-            </Link>
-
-            <Link href="/policies" className="hidden text-sm transition hover:text-berry-dark sm:inline">
-              Policies
-            </Link>
-
-            <Link href="/cart" aria-label="View shopping cart" className="group relative flex items-center">
-              <motion.div
-                key={bumpTick}
-                initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.3, 1] }}
-                whileHover={{ y: -3, rotate: 8 }}
-                transition={{
-                  scale: { duration: 0.3, ease: "easeInOut" },
-                  default: { type: "spring", stiffness: 400 },
-                }}
-              >
-                <ShoppingBag className="h-6 w-6 stroke-[1.5px] transition-colors group-hover:text-gray-500" />
-              </motion.div>
-
-              <AnimatePresence>
-                {cartCount > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white shadow-sm"
-                  >
-                    {cartCount}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Link>
+    <header className="sticky top-0 z-40 border-b border-chocolate/10 bg-cream/95 backdrop-blur-lg">
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-1 px-3 py-2.5 sm:px-7 sm:py-3.5">
+        <Link
+          href="/owner"
+          onClick={handleLogoClick}
+          aria-label="Luu Tasty Treats, meet the baker"
+          className="group inline-flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-berry-dark sm:gap-3"
+        >
+          <div className="shrink-0 overflow-hidden rounded-xl border border-chocolate/10 bg-chocolate p-1 shadow-sm">
+            <Image src="/logo.png" alt="" width={42} height={42} priority
+              className="h-7 w-7 object-contain sm:h-9 sm:w-9" />
           </div>
-        </nav>
-      </header>
+          <span className="min-w-0 whitespace-nowrap font-serif text-[clamp(0.8rem,3.2vw,1.35rem)] font-semibold tracking-[-0.025em] text-chocolate">
+            Luu Tasty Treats
+          </span>
+        </Link>
 
-    </>
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
+          <NavIcon href="/cakes" label="The cake boutique">
+            <CakeSlice className="h-5 w-5 stroke-[1.6px]" aria-hidden="true" />
+          </NavIcon>
+          <NavIcon href="/owner" label="About the baker">
+            <ChefHat className="h-5 w-5 stroke-[1.6px]" aria-hidden="true" />
+          </NavIcon>
+          <Link href="/policies" className="hidden rounded-full px-3 py-2 text-xs font-medium tracking-wide text-chocolate/65 hover:text-chocolate md:block">
+            Policies
+          </Link>
+          <div className="relative">
+            <NavIcon href="/cart" label="View your shopping cart">
+              <motion.span key={bumpTick} initial={{ scale: 1 }} animate={{ scale: [1, 1.16, 1] }}
+                transition={{ duration: 0.3 }}>
+                <ShoppingBag className="h-5 w-5 stroke-[1.6px]" aria-hidden="true" />
+              </motion.span>
+            </NavIcon>
+            <AnimatePresence>
+              {cartCount > 0 && (
+                <motion.span key="count" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                  aria-label={`${cartCount} items in cart`}
+                  className="pointer-events-none absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-berry-dark px-0.5 text-[10px] font-bold text-white shadow-sm">
+                  {cartCount}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </nav>
+    </header>
   );
 }
