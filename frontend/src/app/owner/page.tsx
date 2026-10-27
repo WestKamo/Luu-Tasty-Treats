@@ -1,151 +1,45 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowLeft, Mail, Phone, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Mail, MapPin, MessageCircle } from "lucide-react";
 
 export default function OwnerPage() {
   return (
-    <div className="min-h-screen bg-cream text-black py-12 px-6">
-      <div className="mx-auto max-w-4xl">
-        
-        {/* Back Link */}
-        <Link 
-          href="/cakes" 
-          className="inline-flex items-center gap-2 text-sm font-medium text-black/70 transition hover:text-black mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" /> View Cakes Menu
-        </Link>
-
-        {/* Main Content Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl"
-        >
-          {/* Header Banner */}
-          <div className="bg-black px-8 py-10 text-white text-center relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-            <Sparkles className="mx-auto h-8 w-8 mb-3 text-gray-300 animate-pulse" />
-            <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-widest">
-              Meet The Artisan
-            </h1>
-            <p className="text-gray-400 text-sm tracking-wider mt-1 uppercase">
-              The Soul Behind Luu Tasty Treats
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-12 gap-8 p-8 md:p-12 items-center">
-            
-            {/* Owner Image Column */}
-            <div className="md:col-span-5 flex justify-center">
-              <div className="relative group">
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-black to-gray-600 opacity-30 blur group-hover:opacity-60 transition duration-500"></div>
-                <div className="relative overflow-hidden rounded-2xl border-2 border-black bg-black shadow-lg w-64 h-80">
-                  <Image 
-                    src="/profile.png" 
-                    alt="Lulama Nguxa - Owner of Luu Tasty Treats" 
-                    fill 
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    priority
-                  />
-                </div>
-              </div>
+    <div className="min-h-screen bg-cream text-chocolate">
+      <div className="mx-auto max-w-7xl px-6 pb-20 pt-12 sm:pt-20">
+        <Link href="/cakes" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-chocolate/65 transition hover:text-chocolate"><ArrowLeft size={16}/> Back to the boutique</Link>
+        <div className="mt-12 grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-24">
+          <div className="relative mx-auto w-full max-w-[28rem]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-t-[11rem] rounded-b-[1rem] border-8 border-white bg-[#e7d9cb] shadow-[0_26px_80px_-30px_rgba(56,41,35,.23)]">
+              <Image src="/profile.png" alt="Lulama Nguxa, the baker behind Luu Tasty Treats" fill sizes="(max-width: 1024px) 100vw, 448px" className="object-cover" priority/>
             </div>
-
-            {/* Bio & Details Column */}
-            <div className="md:col-span-7 space-y-6">
-              <div>
-                <h2 className="font-serif text-2xl md:text-3xl font-bold text-black">
-                  Lulama Nguxa
-                </h2>
-                <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mt-1">
-                  Founder & Master Baker
-                </p>
-              </div>
-
-              {/* Motive & About */}
-              <div className="space-y-3 text-sm text-gray-700 leading-relaxed font-sans">
-                <p>
-                  Welcome to my world of sweetness! I believe that every celebration, big or small, deserves a masterpiece crafted with absolute passion. Luu Tasty Treats was born from a deep-rooted love for baking custom creations that don&apos;t just look breathtaking—they melt hearts.
-                </p>
-                <p className="border-l-2 border-black pl-4 italic text-black/90 font-serif text-base">
-                  &ldquo;My motive is simple: turning your sweetest imaginations into edible reality, one layer, flavor, and meticulous finish at a time.&rdquo;
-                </p>
-              </div>
-
-              {/* Contact Information */}
-              <div className="pt-4 border-t border-black/10 space-y-3">
-                <h3 className="text-xs uppercase tracking-widest font-bold text-black">
-                  Direct Connections
-                </h3>
-                
-                <div className="grid gap-2 text-sm">
-                  <a 
-                    href="tel:+27631713034" 
-                    className="flex items-center gap-3 text-gray-800 hover:text-black transition group"
-                  >
-                    <div className="p-2 rounded-full bg-black/5 group-hover:bg-black group-hover:text-white transition">
-                      <Phone className="h-4 w-4" />
-                    </div>
-                    <span className="font-medium">+27 63 171 3034</span>
-                  </a>
-
-                  <a 
-                    href="mailto:lulamanguxa@gmail.com" 
-                    className="flex items-center gap-3 text-gray-800 hover:text-black transition group"
-                  >
-                    <div className="p-2 rounded-full bg-black/5 group-hover:bg-black group-hover:text-white transition">
-                      <Mail className="h-4 w-4" />
-                    </div>
-                    <span className="font-medium">lulamanguxa@gmail.com</span>
-                  </a>
-                </div>
-              </div>
-
+            <span className="absolute -bottom-4 -right-3 rotate-3 rounded-md border border-[#be9c7a]/30 bg-[#f8eedd] px-5 py-3 font-serif italic shadow-md">A little flour. A lot of love.</span>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#996d57]">The hands behind the sweetness</p>
+            <h1 className="mt-5 font-serif text-[clamp(3.5rem,7vw,6rem)] leading-[1.02] tracking-[-0.05em]">Meet <span className="italic text-[#a07660]">Lulama.</span></h1>
+            <p className="mt-4 text-sm font-medium uppercase tracking-[0.16em] text-chocolate/55">Lulama Nguxa · Founder & baker</p>
+            <div className="mt-9 max-w-xl space-y-5 text-[15px] leading-8 text-chocolate/70">
+              <p>Behind every Luu Tasty Treats creation is a real person, a little patience, and a great deal of heart. I believe every celebration deserves a cake made with care, not pulled from a production line.</p>
+              <p>Whether you have a design in mind or just a feeling you want to capture, we’ll work together on the details that make your celebration yours.</p>
+            </div>
+            <blockquote className="mt-9 border-l-2 border-[#b18168] pl-6 font-serif text-2xl italic leading-relaxed text-chocolate">“One layer, one detail, one lovely moment at a time.”</blockquote>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <a href="https://wa.me/27631713034" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-chocolate px-5 py-3 text-sm font-semibold text-cream transition hover:bg-chocolate-light"><MessageCircle size={17}/> WhatsApp Lulama <ArrowUpRight size={15}/></a>
+              <a href="mailto:lulamanguxa@gmail.com" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm font-medium transition hover:bg-white"><Mail size={17}/> Send an email</a>
             </div>
           </div>
-
-          {/* Location & Interactive Map Section */}
-          <div className="bg-gray-50 border-t border-black/10 p-8 md:p-12">
-            <div className="grid md:grid-cols-12 gap-6 items-center">
-              
-              <div className="md:col-span-5 space-y-2">
-                <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500">
-                  <MapPin className="h-4 w-4 text-black" /> Studio Location
-                </div>
-                <h3 className="font-serif text-xl font-bold text-black">
-                  Kokosi, Fochville
-                </h3>
-                <p className="text-sm text-gray-600">
-                  3214 Mbeki Street, Ext 3<br />
-                  Kokosi, Fochville, 215<br />
-                  South Africa
-                </p>
-              </div>
-
-              {/* Map Embed pointing to Fochville / Kokosi area */}
-              <div className="md:col-span-7">
-                <div className="overflow-hidden rounded-xl border border-black/10 shadow-inner h-48 relative bg-gray-200">
-                  <iframe
-                    title="Kokosi Fochville Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-		    src="https://maps.google.com/maps?q=3214+Mbeki+Street,+Kokosi,+Fochville&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                    allowFullScreen={false}
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-        </motion.div>
+        </div>
       </div>
+      <section className="border-t border-chocolate/10 bg-[#f3ece2] px-6 py-12 sm:py-16">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8">
+          <div>
+            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-chocolate/60"><MapPin size={15}/> Our neighbourhood</p>
+            <h2 className="mt-3 font-serif text-3xl">Baked in Kokosi, Fochville.</h2>
+            <p className="mt-2 max-w-lg text-sm leading-7 text-chocolate/60">Made with care in our local kitchen. Collection arrangements are confirmed with the baker.</p>
+          </div>
+          <Link href="/cakes" className="inline-flex items-center gap-2 rounded-full border border-chocolate/25 px-6 py-3 text-sm font-semibold hover:bg-white">Find your cake <ArrowUpRight size={16}/></Link>
+        </div>
+      </section>
     </div>
   );
 }
