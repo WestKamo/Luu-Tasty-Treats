@@ -2,69 +2,50 @@
 
 import { useEffect, useState } from "react";
 
-import CakeCard from "@/components/customer/CakeCard";
-import { publicApiClient } from "@/lib/api/client";
-import { CakeSummary } from "@/types/catalog";
+import { CakeCard } from "@/components/customer/CakeCard";
+import { getCakes } from "@/lib/api/catalog";
+import type { CakeSummary } from "@/types/catalog";
 
 export default function FeaturedCakes() {
   const [cakes, setCakes] = useState<CakeSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
-    async function loadFeaturedCakes() {
-      try {
-        const featuredResponse = await publicApiClient.get<CakeSummary[]>("/api/v1/cakes", {
-          params: { featuredOnly: true },
-        });
+    getCakes({ featuredOnly: true })
+      .then((items) => {
+        if (!mounted) return;
 
-        const featured = featuredResponse.data ?? [];
-        if (!cancelled) {
-          if (featured.length > 0) {
-            setCakes(featured.slice(0, 4));
-            return;
-          }
+        const featured = items.filter((item) => item.isFeatured);
+        setCakes((featured.length ? featured : items).slice(0, 4));
+      })
+      .catch(() => {
+        if (mounted) setFailed(true);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
-          const fallbackResponse = await publicApiClient.get<CakeSummary[]>("/api/v1/cakes");
-          if (!cancelled) setCakes((fallbackResponse.data ?? []).slice(0, 4));
-        }
-      } catch {
-        if (!cancelled) setCakes([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadFeaturedCakes();
     return () => {
-      cancelled = true;
+      mounted = false;
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-        {[...Array(4)].map((_, index) => (
-          <div key={index} className="h-80 animate-pulse rounded-[28px] bg-vanilla/60" />
-        ))}
-      </div>
-    );
+  if (failed) {
+    return <p className="mt-8 text-sm text-chocolate/50">Featured cakes are temporarily unavailable. Browse the full collection instead.</p>;
   }
 
-  if (cakes.length === 0) {
-    return (
-      <div className="mt-10 rounded-[28px] border border-dashed border-chocolate/20 bg-vanilla/30 p-8 text-center text-chocolate/70">
-        Featured cakes will be available soon.
-      </div>
-    );
+  if (!loading && cakes.length === 0) {
+    return <p className="mt-8 text-sm text-chocolate/50">New designs coming soon.</p>;
   }
 
   return (
-    <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-      {cakes.map((cake) => (
-        <CakeCard key={cake.cakeId} cake={cake} />
-      ))}
+    <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+      {loading
+        ? Array.from({ length: 4 }, (_, i) => <div key={i} className="h-72 animate-pulse rounded-3xl bg-vanilla/40 sm:h-96" />)
+        : cakes.map((cake) => <CakeCard key={cake.cakeId} cake={cake} />)}
     </div>
   );
 }

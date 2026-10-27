@@ -14,17 +14,22 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "placehold.co",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
   },
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:5281/api/:path*',
-      },	
-	{
+        source: "/api/:path*",
+        destination: "http://localhost:5281/api/:path*",
+      },
+      {
         source: "/uploads/:path*",
-        destination: "http://localhost:5281/uploads/:path*", 
+        destination: "http://localhost:5281/uploads/:path*",
       },
     ];
   },

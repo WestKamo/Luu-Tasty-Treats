@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+
+import CakePhoto from "@/components/customer/CakePhoto";
 import { getCakeCustomizationSchema } from "@/lib/api/catalog";
 import { CakeDetail } from "@/types/catalog";
 import { useCartStore } from "@/store/cartStore";
@@ -13,15 +14,14 @@ export default function CakeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  
+
   const [cake, setCake] = useState<CakeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
 
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [quantity, setQuantity] = useState(1);
-  
-  // Customization State
+
   const [customName, setCustomName] = useState("");
   const [customAge, setCustomAge] = useState("");
   const [colorTweaks, setColorTweaks] = useState("");
@@ -32,6 +32,7 @@ export default function CakeDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+
     getCakeCustomizationSchema(id)
       .then((data) => setCake(data))
       .catch(() => toast.error("Could not load cake details."))
@@ -43,14 +44,17 @@ export default function CakeDetailPage() {
 
   const currentPrice = cake.basePrice + cake.groups.reduce((sum, group) => {
     const selectedIds = selections[group.groupId] || [];
-    return sum + selectedIds.reduce((gSum, optId) => {
-      const opt = group.options.find(o => o.optionId === optId);
-      return gSum + (opt?.priceModifier || 0);
+    return sum + selectedIds.reduce((groupSum, optId) => {
+      const opt = group.options.find((o) => o.optionId === optId);
+      return groupSum + (opt?.priceModifier || 0);
     }, 0);
   }, 0);
 
-  // Validation: Check if required option groups are filled
-  const optionsValid = cake.groups.every(g => !g.isRequired || (selections[g.groupId]?.length >= g.minSelections));
+  const optionsValid = cake.groups.every((group) => {
+    const count = selections[group.groupId]?.length ?? 0;
+    const min = group.isRequired ? Math.max(1, group.minSelections) : 0;
+    return count >= min && count <= group.maxSelections && (group.selectionType !== "single" || count <= 1);
+  });
 
   function validateCustomization() {
     if (customAge && isNaN(Number(customAge))) {
@@ -66,79 +70,107 @@ export default function CakeDetailPage() {
       toast.error("Please complete all required options above.");
       return;
     }
+
     if (!validateCustomization()) return;
 
-    // Compile the custom fields into a single string for the backend
     const compiledNotes = [
       customName ? `Name: ${customName.trim()}` : "",
       customAge ? `Age: ${customAge.trim()}` : "",
       colorTweaks ? `Colors: ${colorTweaks.trim()}` : "",
-      extraNotes ? `Notes: ${extraNotes.trim()}` : ""
+      extraNotes ? `Notes: ${extraNotes.trim()}` : "",
     ].filter(Boolean).join(" | ");
 
+    if (Object.values(selections).every((ids) => ids.length === 0) && !compiledNotes) {
+      toast.error("Please personalize this cake before adding it to your cart.");
+      return;
+    }
+
+    if (cake.freeTextField?.maxLength && compiledNotes.length > cake.freeTextField.maxLength) {
+      setValidationError(`Please shorten your personal message to ${cake.freeTextField.maxLength} characters.`);
+      return;
+    }
+
+    if (compiledNotes.length > 200) {
+      setValidationError("Please shorten your personalization details (200 characters maximum).");
+      return;
+    }
+
     const allSelectedOptionIds = Object.values(selections).flat();
-    
+    const selectedOptionsPreview = cake.groups.flatMap((group) =>
+      group.options
+        .filter((option) => selections[group.groupId]?.includes(option.optionId))
+        .map((option) => ({
+          optionId: option.optionId,
+          label: `${group.name}: ${option.label}`,
+          priceModifier: option.priceModifier,
+        }))
+    );
+
     addLine({
       lineId: crypto.randomUUID(),
-      cakeId: cake!.cakeId,
-      cakeName: cake!.name,
+      cakeId: cake.cakeId,
+      cakeName: cake.name,
       quantity,
       unitPricePreview: currentPrice,
       customText: compiledNotes || undefined,
-      selectedOptionIds: allSelectedOptionIds
+      selectedOptionIds: allSelectedOptionIds,
+      selectedOptionsPreview,
     });
-    
-    toast.success(`Added to cart!`, { icon: '🍰' });
+
+    toast.success("Added to cart!", { icon: "🍰" });
     router.push("/cart");
   }
 
-  function toggleOption(groupId: string, optionId: string, type: "single" | "multiple", max: number) {
-    setSelections(prev => {
+  function toggleOption(groupId: string, optionId: string, type: "single" | "multi", max: number) {
+    setSelections((prev) => {
       const current = prev[groupId] || [];
       if (type === "single") return { ...prev, [groupId]: [optionId] };
-      if (current.includes(optionId)) return { ...prev, [groupId]: current.filter(id => id !== optionId) };
+      if (current.includes(optionId)) return { ...prev, [groupId]: current.filter((id) => id !== optionId) };
       if (current.length >= max) return prev;
       return { ...prev, [groupId]: [...current, optionId] };
     });
   }
 
   const displayImages = cake.images?.length ? cake.images : [cake.baseImageUrl];
+  const hasPersonalization = Object.values(selections).some((ids) => ids.length > 0) || [customName, customAge, colorTweaks, extraNotes].some((value) => value.trim().length > 0);
+  const textRequired = cake.freeTextField?.isRequired ?? false;
+  const hasCustomText = [customName, customAge, colorTweaks, extraNotes].some((value) => value.trim().length > 0);
+  const canAddToCart = optionsValid && hasPersonalization && (!textRequired || hasCustomText);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 lg:px-6 lg:py-16">
       <div className="grid grid-cols-1 gap-8 lg:gap-12 lg:grid-cols-2">
-        
-        {/* Left: Gallery */}
-        <div className="relative lg:sticky lg:top-24 h-fit">
+        <div className="relative h-fit lg:sticky lg:top-24">
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative h-[32rem] w-full overflow-hidden rounded-4xl bg-vanilla/40 shadow-soft">
-            <Image src={displayImages[activeImage] || "/placeholder.png"} alt={cake.name} fill priority sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+            <CakePhoto src={displayImages[activeImage]} alt={cake.name} className="h-full w-full" eager />
           </motion.div>
           {displayImages.length > 1 && (
             <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {displayImages.map((img, idx) => (
-                <button key={idx} onClick={() => setActiveImage(idx)} className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${activeImage === idx ? "border-berry opacity-100" : "border-transparent opacity-50 hover:opacity-100"}`}>
-                  <Image src={img} alt={`Thumbnail ${idx}`} fill sizes="80px" className="object-cover" />
+                <button
+                  key={idx}
+                  onClick={() => setActiveImage(idx)}
+                  className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${activeImage === idx ? "border-berry opacity-100" : "border-transparent opacity-50 hover:opacity-100"}`}
+                >
+                  <CakePhoto src={img} alt={`${cake.name} photo ${idx + 1}`} className="h-full w-full" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Right: Configurator */}
         <div>
           <h1 className="font-serif text-4xl font-semibold text-chocolate">{cake.name}</h1>
-          <p className="mt-3 text-chocolate/60 leading-relaxed">{cake.description}</p>
+          <p className="mt-3 leading-relaxed text-chocolate/60">{cake.description}</p>
 
           <div className="mt-10 space-y-8">
-            
-            {/* Standard Options (Flavors, Sizes) */}
             {cake.groups.map((group) => (
               <div key={group.groupId}>
                 <div className="mb-3 flex items-baseline justify-between">
                   <h3 className="font-medium text-chocolate">
                     {group.name} {group.isRequired && <span className="ml-1 text-berry-dark">*</span>}
                   </h3>
-                  <span className="text-xs text-chocolate/40 tracking-wide uppercase">
+                  <span className="text-xs uppercase tracking-wide text-chocolate/40">
                     {group.selectionType === "single" ? "Choose 1" : `Choose up to ${group.maxSelections}`}
                   </span>
                 </div>
@@ -146,8 +178,14 @@ export default function CakeDetailPage() {
                   {group.options.map((option) => {
                     const selected = selections[group.groupId]?.includes(option.optionId);
                     return (
-                      <motion.button key={option.optionId} type="button" whileTap={{ scale: 0.94 }} onClick={() => toggleOption(group.groupId, option.optionId, group.selectionType, group.maxSelections)} className={`rounded-full border px-5 py-2.5 text-sm font-medium transition-all duration-200 ${selected ? "border-chocolate bg-chocolate text-cream shadow-soft" : "border-chocolate/15 bg-white text-chocolate/80 hover:border-berry hover:text-chocolate"}`}>
-                        {option.label} {option.priceModifier > 0 && <span className="opacity-70 ml-1">(+R{option.priceModifier.toFixed(2)})</span>}
+                      <motion.button
+                        key={option.optionId}
+                        type="button"
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => toggleOption(group.groupId, option.optionId, group.selectionType, group.maxSelections)}
+                        className={`rounded-full border px-4 py-2 text-sm transition-all ${selected ? "border-berry bg-berry/15 text-chocolate shadow-sm" : "border-chocolate/15 bg-white text-chocolate/70 hover:border-chocolate/30"}`}
+                      >
+                        {option.label} {option.priceModifier > 0 && <span className="ml-1 opacity-70">(+R{option.priceModifier.toFixed(2)})</span>}
                       </motion.button>
                     );
                   })}
@@ -155,46 +193,36 @@ export default function CakeDetailPage() {
               </div>
             ))}
 
-            {/* Customization Block */}
             <div className="rounded-4xl border border-chocolate/10 bg-white/50 p-6 shadow-sm">
-              <h3 className="font-serif text-xl font-medium text-chocolate mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-berry-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-medium text-chocolate">
+                <svg className="h-5 w-5 text-berry-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 19l-4 1 1-4L16.732 3.732a2 2 0 112.828 2.828L9 19z" /></svg>
                 Personalize this Design
               </h3>
-              
-              <div className="grid grid-cols-2 gap-4 mb-4">
+
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-chocolate/80">Name on Cake</label>
-                  <div className="relative">
-                    <svg className="absolute left-3 top-3.5 w-4 h-4 text-chocolate/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="e.g. Phindile" className="w-full rounded-2xl border border-chocolate/15 bg-white pl-9 pr-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
-                  </div>
+                  <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="e.g. Phindile" className="w-full rounded-2xl border border-chocolate/15 bg-white px-3 py-2.5 text-sm text-chocolate placeholder:text-chocolate/30 focus:border-berry" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-chocolate/80">Age / Number</label>
-                  <div className="relative">
-                    <svg className="absolute left-3 top-3.5 w-4 h-4 text-chocolate/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
-                    <input type="text" value={customAge} onChange={(e) => { setCustomAge(e.target.value); validateCustomization(); }} placeholder="e.g. 25" className="w-full rounded-2xl border border-chocolate/15 bg-white pl-9 pr-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
-                  </div>
+                  <input type="text" value={customAge} onChange={(e) => { setCustomAge(e.target.value); validateCustomization(); }} placeholder="e.g. 25" className="w-full rounded-2xl border border-chocolate/15 bg-white px-3 py-2.5 text-sm text-chocolate placeholder:text-chocolate/30 focus:border-berry" />
                 </div>
               </div>
 
               <div className="mb-4">
                 <label className="mb-1 block text-sm font-medium text-chocolate/80">Color Tweaks</label>
-                <div className="relative">
-                  <svg className="absolute left-3 top-3.5 w-4 h-4 text-chocolate/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
-                  <input type="text" value={colorTweaks} onChange={(e) => setColorTweaks(e.target.value)} placeholder="e.g. Change pink frosting to baby blue" className="w-full rounded-2xl border border-chocolate/15 bg-white pl-9 pr-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
-                </div>
+                <input type="text" value={colorTweaks} onChange={(e) => setColorTweaks(e.target.value)} placeholder="e.g. Change pink frosting to baby blue" className="w-full rounded-2xl border border-chocolate/15 bg-white px-3 py-2.5 text-sm text-chocolate placeholder:text-chocolate/30 focus:border-berry" />
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-chocolate/80">Extra Details (Optional)</label>
-                <textarea rows={2} value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} placeholder="Tiers, specific flavor combinations, allergies..." className="w-full rounded-2xl border border-chocolate/15 bg-white px-4 py-3 text-sm text-chocolate outline-none transition focus:border-berry focus:ring-2 focus:ring-berry/20" />
+                <textarea rows={2} value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} placeholder="Tiers, flavors, allergies..." className="w-full rounded-2xl border border-chocolate/15 bg-white px-3 py-2.5 text-sm text-chocolate placeholder:text-chocolate/30 focus:border-berry" />
               </div>
-              
+
               <AnimatePresence>
                 {validationError && (
-                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-3 font-medium">
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3 text-sm font-medium text-red-500">
                     {validationError}
                   </motion.p>
                 )}
@@ -203,30 +231,30 @@ export default function CakeDetailPage() {
 
             <div className="flex items-center justify-between border-t border-chocolate/10 pt-6">
               <label className="font-medium text-chocolate">Quantity</label>
-              <div className="flex items-center gap-4 bg-white border border-chocolate/15 rounded-full px-4 py-1.5 shadow-sm">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-xl text-chocolate/60 hover:text-chocolate pb-1">-</button>
+              <div className="flex items-center gap-4 rounded-full border border-chocolate/15 bg-white px-4 py-1.5 shadow-sm">
+                <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="pb-1 text-xl text-chocolate/60 hover:text-chocolate">-</button>
                 <span className="w-8 text-center font-medium">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} className="text-xl text-chocolate/60 hover:text-chocolate pb-1">+</button>
+                <button type="button" onClick={() => setQuantity(quantity + 1)} className="pb-1 text-xl text-chocolate/60 hover:text-chocolate">+</button>
               </div>
             </div>
           </div>
 
           <div className="mt-10">
             <AnimatePresence mode="wait">
-              <motion.div key={currentPrice} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex justify-between items-end">
-                <span className="text-chocolate/60 font-medium">Total Price</span>
+              <motion.div key={currentPrice} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-end justify-between">
+                <span className="font-medium text-chocolate/60">Total Price</span>
                 <span className="font-serif text-3xl font-semibold text-chocolate">R{(currentPrice * quantity).toFixed(2)}</span>
               </motion.div>
             </AnimatePresence>
-            <motion.button 
-              disabled={!optionsValid} 
-              onClick={handleAddToCart} 
-              whileHover={optionsValid ? { scale: 1.02 } : {}} 
-              whileTap={optionsValid ? { scale: 0.97 } : {}} 
-              className={`w-full flex items-center justify-center gap-3 rounded-full py-4.5 font-semibold tracking-wide transition-all duration-300 ${optionsValid ? "bg-chocolate text-cream shadow-soft hover:bg-chocolate-light hover:shadow-xl" : "cursor-not-allowed bg-chocolate/10 text-chocolate/40"}`}
+            <motion.button
+              type="button"
+              disabled={!canAddToCart}
+              onClick={handleAddToCart}
+              whileHover={canAddToCart ? { scale: 1.02 } : {}}
+              whileTap={canAddToCart ? { scale: 0.97 } : {}}
+              className={`w-full rounded-full py-4.5 font-semibold tracking-wide transition-all duration-300 ${canAddToCart ? "bg-chocolate text-cream shadow-soft hover:bg-chocolate-light hover:shadow-xl" : "cursor-not-allowed bg-chocolate/10 text-chocolate/40"}`}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-              {optionsValid ? "Add to Cart" : "Complete required options"}
+              {canAddToCart ? "Add personalized cake to cart" : optionsValid ? "Personalize to add to cart" : "Complete required options"}
             </motion.button>
           </div>
         </div>

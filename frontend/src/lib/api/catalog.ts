@@ -1,8 +1,8 @@
-import { apiClient } from "./client";
+import { publicApiClient } from "./client";
 import { CakeSummary, CakeDetail } from "@/types/catalog";
 
 export async function getCakes(params?: { categoryId?: string; featuredOnly?: boolean }) {
-  const { data } = await apiClient.get<CakeSummary[]>("/api/v1/cakes", { params });
+  const { data } = await publicApiClient.get<CakeSummary[]>("/api/v1/cakes", { params });
   return data;
 }
 
@@ -12,7 +12,7 @@ export async function getAdminCakes() {
 }
 
 export async function getCakeCustomizationSchema(cakeId: string) {
-  const { data } = await apiClient.get<CakeDetail>(`/api/v1/cakes/${cakeId}/customization-schema`);
+  const { data } = await publicApiClient.get<CakeDetail>(`/api/v1/cakes/${cakeId}/customization-schema`);
   // The Minimal API returns a .NET enum (0/1 by default) on this endpoint.
   // Accept both numeric and string forms so required selections work in the UI.
   return {
@@ -21,7 +21,7 @@ export async function getCakeCustomizationSchema(cakeId: string) {
       const rawType: unknown = group.selectionType;
       return {
         ...group,
-        selectionType: (rawType === 0 || String(rawType).toLowerCase() === "single")
+        selectionType: (rawType === 0 || rawType === "0" || String(rawType).toLowerCase() === "single")
           ? "single" as const
           : "multi" as const,
       };
@@ -57,6 +57,7 @@ export async function updateCake(cakeId: string, payload: UpdateCakePayload) {
   const { data } = await apiClient.put(`/api/v1/admin/cakes/${cakeId}`, payload);
   return data;
 }
+
 export async function uploadCakeImage(cakeId: string, file: File, displayOrder: number) {
   const form = new FormData();
   form.append("file", file);
@@ -67,6 +68,7 @@ export async function uploadCakeImage(cakeId: string, file: File, displayOrder: 
   });
   return data;
 }
+
 export async function deleteCake(cakeId: string) {
   await apiClient.delete(`/api/v1/admin/cakes/${cakeId}`);
 }
