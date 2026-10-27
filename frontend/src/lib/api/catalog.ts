@@ -1,4 +1,4 @@
-import { publicApiClient } from "./client";
+import { apiClient, publicApiClient } from "./client";
 import { CakeSummary, CakeDetail } from "@/types/catalog";
 
 export async function getCakes(params?: { categoryId?: string; featuredOnly?: boolean }) {
@@ -48,8 +48,25 @@ export interface UpdateCakePayload {
   isActive?: boolean;
 }
 
-export async function createCake(payload: UpdateCakePayload) {
-  const { data } = await apiClient.post(`/api/v1/admin/cakes`, payload);
+// Creation and editing have different contracts: new cakes start inactive
+// and CategoryId is nullable in the backend CreateCakeRequest.
+export interface CreateCakePayload {
+  name: string;
+  description: string | null;
+  basePrice: number;
+  categoryId?: string | null;
+}
+
+export interface CreatedCake {
+  cakeId: string;
+  name: string;
+  basePrice: number;
+  baseImageUrl: string;
+  isActive: boolean;
+}
+
+export async function createCake(payload: CreateCakePayload): Promise<CreatedCake> {
+  const { data } = await apiClient.post<CreatedCake>("/api/v1/admin/cakes", payload);
   return data;
 }
 
@@ -58,13 +75,17 @@ export async function updateCake(cakeId: string, payload: UpdateCakePayload) {
   return data;
 }
 
-export async function uploadCakeImage(cakeId: string, file: File, displayOrder: number) {
+export async function uploadCakeImage(cakeId: string, file: File, displayOrder: number, onProgress?: (percent: number) => void) {
   const form = new FormData();
   form.append("file", file);
   const { data } = await apiClient.post(`/api/v1/admin/cakes/${cakeId}/images?displayOrder=${displayOrder}`, form, {
-    headers: {
-      "Content-Type": "multipart/form-data"
-    }
+    // Axios sets the multipart boundary for browser FormData.
+    headers: { "Content-Type": undefined },
+    onUploadProgress: (event) => {
+      if (event.total && onProgress) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    },
   });
   return data;
 }
