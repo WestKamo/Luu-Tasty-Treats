@@ -14,12 +14,12 @@ export default function FeaturedCakes() {
   useEffect(() => {
     let mounted = true;
 
-    getCakes({ featuredOnly: true })
+    // Request the full public list so non-featured active cakes fill empty slots.
+    // The public API already sorts featured cakes first.
+    getCakes()
       .then((items) => {
         if (!mounted) return;
-
-        const featured = items.filter((item) => item.isFeatured);
-        setCakes((featured.length ? featured : items).slice(0, 4));
+        setCakes(items.slice(0, 4));
       })
       .catch(() => {
         if (mounted) setFailed(true);
