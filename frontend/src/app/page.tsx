@@ -2,95 +2,102 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Facebook, Github, MessageCircle, MoveDownRight } from "lucide-react";
+import { contactLinks } from "@/lib/contact";
 
-import FeaturedCakes from "@/components/customer/FeaturedCakes";
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 },
-  },
+const reveal = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: "easeOut" as const } },
 };
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#FDFBF7]">
-      <section className="relative mx-auto flex w-full max-w-7xl flex-col-reverse items-center justify-between gap-12 px-6 py-16 lg:flex-row lg:py-24">
-        <motion.div
-          className="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.p variants={fadeInUp} className="text-xs font-bold uppercase tracking-[0.3em] text-berry-dark">
-            Handcrafted in Kokosi
-          </motion.p>
-          <motion.h1 variants={fadeInUp} className="mt-4 font-serif text-5xl font-semibold leading-tight text-chocolate sm:text-6xl lg:text-7xl">
-            Sweet moments, <br className="hidden lg:block" />
-            <span className="italic text-chocolate/80">baked to perfection.</span>
-          </motion.h1>
-          <motion.p variants={fadeInUp} className="mt-6 max-w-lg text-lg leading-relaxed text-chocolate/70">
-            Every creation at Luu Tasty Treats is a personal labor of love. From the first whisk to the final garnish, your cakes are handcrafted entirely by the founder to make your celebrations unforgettable.
-          </motion.p>
-
-          <motion.div variants={fadeInUp} className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-            <Link
-              href="/cakes"
-              className="group flex items-center gap-2 rounded-full bg-chocolate px-8 py-4 font-medium tracking-wide text-[#FDFBF7] shadow-lg transition-all hover:bg-chocolate-light hover:shadow-xl"
-            >
-              Explore the Boutique
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/owner"
-              className="rounded-full px-8 py-4 font-medium tracking-wide text-chocolate transition-colors hover:bg-chocolate/5"
-            >
-              Meet the Baker
-            </Link>
+    <div className="overflow-hidden bg-cream">
+      <section className="relative isolate border-b border-chocolate/10">
+        <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 -z-10 h-full w-[58%] bg-[radial-gradient(ellipse_at_70%_30%,rgba(184,155,115,0.17),transparent_64%)]" />
+        <div className="mx-auto grid min-h-[72vh] max-w-7xl items-center gap-12 px-6 py-20 sm:px-8 lg:grid-cols-[1.25fr_0.75fr] lg:gap-20 lg:py-28">
+          <motion.div initial="hidden" animate="visible" transition={{ staggerChildren: 0.13 }}>
+            <motion.p variants={reveal} className="mb-7 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.26em] text-berry-dark">
+              <span className="h-px w-10 bg-berry-dark/60" /> Luu Tasty Treats · A cake atelier
+            </motion.p>
+            <motion.h1 variants={reveal} className="max-w-[47rem] font-serif text-[clamp(3.3rem,8vw,7rem)] font-medium leading-[0.99] tracking-[-0.055em] text-chocolate">
+              Made for the <span className="italic text-berry-dark">moments</span> that stay.
+            </motion.h1>
+            <motion.p variants={reveal} className="mt-8 max-w-xl text-base leading-8 text-chocolate/65 sm:text-lg">
+              Thoughtfully designed cakes, made to order. Each detail, from the first sketch to the last flourish, is a little piece of your story.
+            </motion.p>
+            <motion.div variants={reveal} className="mt-9 flex flex-wrap gap-3">
+              <Link href="/cakes" className="group inline-flex items-center justify-center gap-3 rounded-full bg-chocolate px-7 py-3.5 text-sm font-semibold text-cream transition hover:bg-chocolate-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-berry-dark">
+                Explore the Boutique <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+              <Link href="/owner" className="inline-flex items-center justify-center gap-2 rounded-full border border-chocolate/20 px-7 py-3.5 text-sm font-medium text-chocolate transition hover:border-chocolate/50 hover:bg-white/60">
+                Meet the baker <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
           </motion.div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative w-full max-w-md lg:max-w-lg"
-        >
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-vanilla/50 shadow-2xl">
-            <img
-              src="/cake.png"
-              alt="Signature handcrafted cake by Luu Tasty Treats"
-              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-            />
-          </div>
-          <div className="absolute -bottom-6 -left-6 flex h-32 w-32 flex-col items-center justify-center rounded-full border-4 border-[#FDFBF7] bg-berry-dark text-[#FDFBF7] shadow-xl">
-            <Star className="mb-1 h-5 w-5 fill-current" />
-            <span className="font-serif text-sm font-bold">100%</span>
-            <span className="text-[10px] uppercase tracking-wider">Custom</span>
-          </div>
-        </motion.div>
+          <motion.aside initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, delay: 0.25 }}
+            className="relative mx-auto w-full max-w-sm border-l border-chocolate/15 py-9 pl-8 sm:pl-12 lg:max-w-none">
+            <p className="font-serif text-5xl font-light italic text-gold">“</p>
+            <p className="mt-1 font-serif text-[clamp(1.8rem,3.8vw,3rem)] leading-[1.22] tracking-tight text-chocolate">
+              More than a cake. A beautiful reason to gather.
+            </p>
+            <div className="mt-10 flex items-center justify-between border-t border-chocolate/15 pt-5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-chocolate/50">From our kitchen, with love</span>
+              <MoveDownRight className="h-5 w-5 text-berry-dark" aria-hidden="true" />
+            </div>
+          </motion.aside>
+        </div>
       </section>
 
-      <section className="mt-12 bg-white px-6 py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div>
-              <h2 className="font-serif text-3xl font-semibold text-chocolate sm:text-4xl">Featured Creations</h2>
-              <p className="mt-2 text-chocolate/60">A glimpse of what&apos;s leaving our kitchen this week.</p>
-            </div>
-            <Link href="/cakes" className="text-sm font-semibold tracking-wide text-berry hover:text-berry-dark">
-              View all cakes &rarr;
-            </Link>
+      <section className="bg-[#F4EEE6] px-6 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-center">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.23em] text-berry-dark">Made personal</p>
+            <h2 className="mt-4 max-w-md font-serif text-4xl leading-[1.15] tracking-tight text-chocolate sm:text-5xl">
+              Your vision, beautifully considered.
+            </h2>
           </div>
+          <div className="grid gap-6 border-t border-chocolate/15 pt-7 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
+            {[
+              ["01", "Find a design", "Explore the boutique and choose a starting point."],
+              ["02", "Make it yours", "Select details, colours and a message of your own."],
+              ["03", "Celebrate", "A cake created for the people who matter."],
+            ].map(([number, title, description]) => (
+              <div key={number} className="space-y-3">
+                <p className="font-serif text-2xl italic text-berry-dark">{number}</p>
+                <h3 className="font-semibold text-chocolate">{title}</h3>
+                <p className="text-sm leading-6 text-chocolate/65">{description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <FeaturedCakes />
+      <section id="contact" className="mx-auto max-w-7xl px-6 py-20 sm:px-8 sm:py-24">
+        <div className="flex flex-col justify-between gap-5 border-b border-chocolate/15 pb-8 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.23em] text-berry-dark">A little conversation</p>
+            <h2 className="mt-4 font-serif text-4xl tracking-tight text-chocolate sm:text-5xl">Tell us what you&apos;re dreaming of.</h2>
+          </div>
+          <p className="max-w-xs text-sm leading-7 text-chocolate/60">Have a colour, an occasion or just an idea? We would love to hear it.</p>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <a href={contactLinks.whatsapp} target="_blank" rel="noopener noreferrer"
+            className="group flex items-center justify-between rounded-2xl border border-chocolate/10 bg-white/70 p-5 transition hover:border-chocolate/30 hover:bg-white">
+            <span className="flex items-center gap-3 font-medium text-chocolate"><MessageCircle className="h-5 w-5 text-berry-dark" /> WhatsApp</span>
+            <ArrowUpRight className="h-4 w-4 text-chocolate/45 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
+          <a href={contactLinks.facebook} target="_blank" rel="noopener noreferrer"
+            className="group flex items-center justify-between rounded-2xl border border-chocolate/10 bg-white/70 p-5 transition hover:border-chocolate/30 hover:bg-white">
+            <span className="flex items-center gap-3 font-medium text-chocolate"><Facebook className="h-5 w-5 text-berry-dark" /> Find on Facebook</span>
+            <ArrowUpRight className="h-4 w-4 text-chocolate/45 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
+          <a href={contactLinks.github} target="_blank" rel="noopener noreferrer"
+            className="group flex items-center justify-between rounded-2xl border border-chocolate/10 bg-white/70 p-5 transition hover:border-chocolate/30 hover:bg-white">
+            <span className="flex items-center gap-3 font-medium text-chocolate"><Github className="h-5 w-5 text-berry-dark" /> Crafted on GitHub</span>
+            <ArrowUpRight className="h-4 w-4 text-chocolate/45 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
         </div>
       </section>
     </div>
