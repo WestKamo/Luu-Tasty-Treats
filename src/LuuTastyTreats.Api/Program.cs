@@ -60,6 +60,8 @@ var firebaseApp = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(new AppOptio
 });
 builder.Services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
 builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection(UploadOptions.SectionName));
+// Supabase Storage uses this API server’s private credentials (never frontend keys).
+builder.Services.AddScoped<SupabaseCakeStorage>();
 
 // 5. PayFast Payment Integration
 builder.Services.Configure<PayFastOptions>(builder.Configuration.GetSection(PayFastOptions.SectionName));
