@@ -6,14 +6,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LuuTastyTreats.Api.Modules.Catalog.Features.UploadCakeImage;
 
 public class UploadCakeImageHandler : IRequestHandler<UploadCakeImageCommand, UploadCakeImageResult> {
     private readonly AppDbContext _db;
     private readonly UploadOptions _options;
-    // PASTE YOUR FIREBASE BUCKET NAME HERE:
-    private readonly string _bucketName = "YOUR_PROJECT_ID.appspot.com"; 
+    
+    // Cloudinary credentials
+    private readonly string _cloudinaryUrl = "cloudinary://521761483369234:knltFrq6PtOiK_5CbkIB9iipl-c@xi4sap4e";
 
     public UploadCakeImageHandler(AppDbContext db, IOptions<UploadOptions> options) {
         _db = db; 
@@ -36,18 +42,22 @@ public class UploadCakeImageHandler : IRequestHandler<UploadCakeImageCommand, Up
         var allowedContentTypes = new[] { "image/jpeg", "image/png", "image/webp" };
         if (!allowedContentTypes.Contains(file.ContentType.ToLowerInvariant())) return new UploadCakeImageResult.InvalidFile("Invalid content type.");
         
-        var safeFileName = $"{Guid.NewGuid()}{extension}";
-        var objectName = $"cakes/{cake.CakeId}/{safeFileName}";
+        var cloudinary = new Cloudinary(_cloudinaryUrl);
+        cloudinary.Api.Secure = true;
 
-        // --- NEW FIREBASE UPLOAD LOGIC ---
-        var storageClient = await StorageClient.CreateAsync();
-        using (var memoryStream = new MemoryStream()) {
-            await file.CopyToAsync(memoryStream, ct);
-            await storageClient.UploadObjectAsync(_bucketName, objectName, file.ContentType, memoryStream, cancellationToken: ct);
+        var uploadResult = new ImageUploadResult();
+        
+        using (var stream = file.OpenReadStream())
+        {
+            var uploadParams = new ImageUploadParams()
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = $"cakes/{cake.CakeId}"
+            };
+            uploadResult = await cloudinary.UploadAsync(uploadParams);
         }
 
-        // Generate the permanent public Firebase URL
-        var permanentUrl = $"https://firebasestorage.googleapis.com/v0/b/{_bucketName}/o/{Uri.EscapeDataString(objectName)}?alt=media";
+        var permanentUrl = uploadResult.SecureUrl.ToString();
 
         var image = new CakeImage { ImageId = Guid.NewGuid(), CakeId = cake.CakeId, ImageUrl = permanentUrl, DisplayOrder = request.DisplayOrder };
         _db.CakeImages.Add(image);
