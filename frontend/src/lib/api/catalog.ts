@@ -13,7 +13,20 @@ export async function getAdminCakes() {
 
 export async function getCakeCustomizationSchema(cakeId: string) {
   const { data } = await apiClient.get<CakeDetail>(`/api/v1/cakes/${cakeId}/customization-schema`);
-  return data;
+  // The Minimal API returns a .NET enum (0/1 by default) on this endpoint.
+  // Accept both numeric and string forms so required selections work in the UI.
+  return {
+    ...data,
+    groups: (data.groups ?? []).map((group) => {
+      const rawType: unknown = group.selectionType;
+      return {
+        ...group,
+        selectionType: (rawType === 0 || String(rawType).toLowerCase() === "single")
+          ? "single" as const
+          : "multi" as const,
+      };
+    }),
+  };
 }
 
 export interface CakeImageDto {
