@@ -1,3 +1,4 @@
+import axios from "axios";
 import { apiClient, publicApiClient } from "./client";
 import { CakeSummary, CakeDetail } from "@/types/catalog";
 
@@ -30,10 +31,9 @@ export async function getCakeCustomizationSchema(cakeId: string) {
 }
 
 export interface CakeImageDto {
-  id: string;
-  url: string;
-  isPrimary?: boolean;
-  displayOrder?: number;
+  imageId: string;
+  imageUrl: string;
+  displayOrder: number;
 }
 
 export async function getCakeImages(cakeId: string): Promise<CakeImageDto[]> {
@@ -94,6 +94,26 @@ export async function deleteCake(cakeId: string) {
   await apiClient.delete(`/api/v1/admin/cakes/${cakeId}`);
 }
 
-export async function deleteCakeImage(cakeId: string, imageUrl: string) {
-  await apiClient.delete(`/api/v1/admin/cakes/${cakeId}/images`, { params: { imageUrl } });
+export async function deleteCakeImage(imageId: string) {
+  await apiClient.delete(`/api/v1/admin/cake-images/${imageId}`);
+}
+
+/** Safe user-facing diagnostics, without exposing bearer tokens or backend secrets. */
+export function describeCakeApiError(error: unknown, action: "create" | "upload" | "update" | "delete"): string {
+  if (!axios.isAxiosError(error)) return "Unexpected error. Please retry.";
+  const status = error.response?.status;
+  const payload = error.response?.data as { error?: string; detail?: string; title?: string; errors?: Record<string, string[]> } | undefined;
+  if (!status) return "Cannot reach the API. Check your connection and the deployed backend.";
+  if (status === 401) return "Session expired (401). Sign in again.";
+  if (status === 403) return action === "upload" || action === "delete"
+    ? "Photo action denied (403). SuperAdmin access is required."
+    : "Action denied (403). Admin privileges are required.";
+  if (status === 404) return "Resource or API route not found (404).";
+  if (status === 413) return "Image is too large (413). Try a smaller file.";
+  if (status === 400 || status === 422) {
+    const fields = payload?.errors ? Object.values(payload.errors).flat().join(" ") : "";
+    return `Request rejected (${status}): ${fields || payload?.error || payload?.detail || payload?.title || "Check the submitted data."}`;
+  }
+  if (status >= 500) return `Backend error (${status}). Check Render logs.`;
+  return `Request failed (HTTP ${status}): ${payload?.error || payload?.detail || "Please retry."}`;
 }
