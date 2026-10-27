@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, CakeSlice, MessageCircle, Github, Facebook } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CakeSlice, MessageCircle, Code2, Globe } from "lucide-react";
 
 export default function Home() {
   return (
@@ -43,8 +43,8 @@ export default function Home() {
           <p className="mt-5 max-w-xl leading-8 text-chocolate/70">Have an idea for a custom cake or want to ask a question? Get in touch with the baker, or browse the collection to begin.</p>
           <div className="mt-9 flex flex-wrap gap-3">
             <a href="https://wa.me/27631713034" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-chocolate px-5 py-3 text-sm font-semibold text-cream hover:bg-chocolate-light"><MessageCircle size={17}/> WhatsApp <ArrowUpRight size={14}/></a>
-            <a href="https://www.facebook.com/search/top?q=Luu%20Tasty%20Treats" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm hover:bg-white"><Facebook size={17}/> Find on Facebook <ArrowUpRight size={14}/></a>
-            <a href="https://github.com/WestKamo" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm hover:bg-white"><Github size={17}/> Site creator <ArrowUpRight size={14}/></a>
+            <a href="https://www.facebook.com/search/top?q=Luu%20Tasty%20Treats" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm hover:bg-white"><Globe size={17}/> Find on Facebook <ArrowUpRight size={14}/></a>
+            <a href="https://github.com/WestKamo" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-chocolate/20 px-5 py-3 text-sm hover:bg-white"><Code2 size={17}/> Site creator <ArrowUpRight size={14}/></a>
           </div>
           <p className="mt-3 text-xs text-chocolate/45">Facebook opens a search for the bakery until its official page link is confirmed.</p>
         </div>
