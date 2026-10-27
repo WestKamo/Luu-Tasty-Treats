@@ -15,12 +15,13 @@ import { CakeSummary } from "@/types/catalog";
 export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; onClose: () => void; onSaved: () => void }) {
   const [images, setImages] = useState<CakeImageDto[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [failedFile, setFailedFile] = useState<File | null>(null);
+  const [failedFiles, setFailedFiles] = useState<File[]>([]);
+  const [uploadStatus, setUploadStatus] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CakeEditFormValues>({
     resolver: zodResolver(cakeEditSchema),
-    defaultValues: { name: cake.name, description: cake.description ?? "", basePrice: cake.basePrice, isActive: true },
+    defaultValues: { name: cake.name, description: cake.description ?? "", basePrice: cake.basePrice, isActive: cake.isActive },
   });
 
   useEffect(() => { getCakeImages(cake.cakeId).then(setImages).catch(() => {}); }, [cake.cakeId]);
@@ -35,24 +36,37 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
     }
   }
 
-  async function handleFile(file: File) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("Choose a JPG, PNG, or WebP image."); return; }
-    setFailedFile(file);
+  async function handleFiles(fileList: File[] | FileList) {
+    if (uploading) return;
+    const files = Array.from(fileList);
+    if (!files.length) return;
+    if (files.some((f) => !["image/jpeg","image/png","image/webp"].includes(f.type) || f.size > 5 * 1024 * 1024)) {
+      toast.error("Use JPG, PNG or WebP images up to 5 MB each.");
+      return;
+    }
+    setFailedFiles(files);
     setUploadError(null);
     setUploading(true);
+    let completed = 0;
     try {
-      const nextOrder = images.length ? Math.max(...images.map((i) => i.displayOrder)) + 1 : 1;
-      const result = await uploadCakeImage(cake.cakeId, file, nextOrder);
-      setImages((prev) => [...prev, { imageId: result.imageId, imageUrl: result.imageUrl, displayOrder: nextOrder }]);
-      setFailedFile(null);
-      toast.success("Photo added");
-      onSaved();
+      let nextOrder = images.length ? Math.max(...images.map((img) => img.displayOrder)) + 1 : 1;
+      for (const file of files) {
+        setUploadStatus(`Uploading photo ${completed + 1} of ${files.length}`);
+        await uploadCakeImage(cake.cakeId, file, nextOrder++);
+        completed += 1;
+        setImages(await getCakeImages(cake.cakeId));
+        onSaved();
+      }
+      setFailedFiles([]);
+      toast.success(`${completed} photo${completed === 1 ? "" : "s"} added`);
     } catch (error) {
+      setFailedFiles(files.slice(completed));
       const message = describeCakeApiError(error, "upload");
       setUploadError(message);
       toast.error(message);
     } finally {
       setUploading(false);
+      setUploadStatus("");
     }
   }
 
@@ -61,6 +75,7 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
       await deleteCakeImage(imageId);
       setImages((prev) => prev.filter((i) => i.imageId !== imageId));
       toast.success("Photo removed");
+      onSaved();
     } catch (error) {
       toast.error(describeCakeApiError(error, "delete"));
     }
@@ -104,21 +119,23 @@ export function EditCakeDrawer({ cake, onClose, onSaved }: { cake: CakeSummary; 
             {images.map((img) => (
               <div key={img.imageId} className="group relative aspect-square overflow-hidden rounded-2xl border border-chocolate/10">
                 <img src={resolveCakeImageUrl(img.imageUrl) || "/cake.png"} alt="" className="h-full w-full object-cover" />
-                <button onClick={() => handleDeleteImage(img.imageId)} className="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white group-hover:flex">
+                <button onClick={() => handleDeleteImage(img.imageId)} type="button" aria-label="Delete this cake photograph" className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-red-700 text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chocolate">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
             ))}
             <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-chocolate/20 text-chocolate/40 transition hover:border-berry hover:text-berry-dark">
               <UploadCloud className="h-5 w-5" />
-              <span className="text-[10px]">{uploading ? "..." : "Add"}</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading}
-                onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFile(file); }} />
+              <span className="text-[10px]">{uploading ? "..." : "Add photos"}</span>
+              <input type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading}
+                onChange={(e) => { if (e.target.files?.length) void handleFiles(e.target.files); e.target.value = ""; }} />
             </label>
           </div>
+          {uploadStatus && <p aria-live="polite" className="mt-3 text-sm text-chocolate/60">{uploadStatus}</p>}
+          <p className="mt-3 text-xs text-chocolate/50">Add a single photograph or choose several together.</p>
           {uploadError && <p role="alert" className="mt-3 text-sm text-red-600">{uploadError}</p>}
-          {failedFile && !uploading && uploadError && (
-            <button type="button" onClick={() => void handleFile(failedFile)} className="mt-3 rounded-full bg-chocolate px-4 py-2 text-sm font-semibold text-cream">Retry photo upload</button>
+          {failedFiles.length > 0 && !uploading && uploadError && (
+            <button type="button" onClick={() => void handleFiles(failedFiles)} className="mt-3 rounded-full bg-chocolate px-4 py-2 text-sm font-semibold text-cream">Retry photo upload</button>
           )}
         </div>
       </motion.div>

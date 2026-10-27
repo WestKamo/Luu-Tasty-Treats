@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/cartStore";
-import { CakeSlice, ShoppingBag } from "lucide-react";
+import { CakeSlice, ShoppingBag, BookOpenText, ScrollText } from "lucide-react";
 
 const SECRET_CLICKS_REQUIRED = 5;
 const SECRET_CLICK_WINDOW_MS = 1500;
@@ -16,26 +16,30 @@ export function Navbar() {
   const cartCount = useCartStore((s) => s.lines.length);
   const bumpTick = useCartStore((s) => s.bumpTick);
   const clickTimestamps = useRef<number[]>([]);
+  const ownerNavigationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (ownerNavigationTimer.current) clearTimeout(ownerNavigationTimer.current); }, []);
 
   function handleLogoClick(e: React.MouseEvent) {
+    e.preventDefault();
     const now = Date.now();
-    const recentClicks = clickTimestamps.current.filter((t) => now - t < SECRET_CLICK_WINDOW_MS);
-    const updatedClicks = [...recentClicks, now];
-    clickTimestamps.current = updatedClicks;
-
-    if (updatedClicks.length >= SECRET_CLICKS_REQUIRED) {
-      e.preventDefault();
+    clickTimestamps.current = [...clickTimestamps.current.filter((t) => now - t < SECRET_CLICK_WINDOW_MS), now];
+    if (ownerNavigationTimer.current) clearTimeout(ownerNavigationTimer.current);
+    if (clickTimestamps.current.length >= SECRET_CLICKS_REQUIRED) {
       clickTimestamps.current = [];
       router.push("/admin/login");
     } else {
-      e.preventDefault();
-      router.push("/owner");
+      // Briefly delay normal logo navigation to allow the five-tap shortcut.
+      ownerNavigationTimer.current = setTimeout(() => {
+        clickTimestamps.current = [];
+        router.push("/owner");
+      }, 520);
     }
   }
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-black/10 bg-cream/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-chocolate/10 bg-cream/95 backdrop-blur-md">
         <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <Link
             href="/owner"
@@ -57,7 +61,7 @@ export function Navbar() {
             </span>
           </Link>
 
-          <div className="flex shrink-0 items-center gap-4 text-black sm:gap-6 lg:gap-8">
+          <div className="flex shrink-0 items-center gap-3 text-chocolate sm:gap-5 lg:gap-7">
             <Link href="/cakes" aria-label="Browse cakes" className="group relative">
               <motion.div
                 whileHover={{ y: -3, rotate: -8 }}
@@ -67,10 +71,11 @@ export function Navbar() {
               </motion.div>
             </Link>
 
-            <Link href="/policies" className="hidden text-sm transition hover:text-berry-dark sm:inline">
-              Policies
+            <Link href="/owner" title="Meet the baker" aria-label="Meet the baker" className="group inline-flex items-center gap-1.5 text-chocolate transition hover:text-[#9a624b]">
+              <BookOpenText className="h-5.5 w-5.5 stroke-[1.5px]" />
+              <span className="hidden text-sm font-medium md:inline">About</span>
             </Link>
-
+            <Link href="/policies" title="Our policies" aria-label="Our policies" className="hidden text-sm transition hover:text-[#9a624b] sm:inline">Policies</Link>
             <Link href="/cart" aria-label="View shopping cart" className="group relative flex items-center">
               <motion.div
                 key={bumpTick}

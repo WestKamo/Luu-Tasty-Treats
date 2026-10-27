@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-import CakePhoto from "@/components/customer/CakePhoto";
+import { CakeGallery } from "@/components/customer/CakeGallery";
 import { getCakeCustomizationSchema } from "@/lib/api/catalog";
 import { CakeDetail } from "@/types/catalog";
 import { useCartStore } from "@/store/cartStore";
@@ -17,7 +17,6 @@ export default function CakeDetailPage() {
 
   const [cake, setCake] = useState<CakeDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState(0);
 
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [quantity, setQuantity] = useState(1);
@@ -141,22 +140,7 @@ export default function CakeDetailPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 lg:px-6 lg:py-16">
       <div className="grid grid-cols-1 gap-8 lg:gap-12 lg:grid-cols-2">
         <div className="relative h-fit lg:sticky lg:top-24">
-          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative h-[32rem] w-full overflow-hidden rounded-4xl bg-vanilla/40 shadow-soft">
-            <CakePhoto src={displayImages[activeImage]} alt={cake.name} className="h-full w-full" eager />
-          </motion.div>
-          {displayImages.length > 1 && (
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {displayImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImage(idx)}
-                  className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${activeImage === idx ? "border-berry opacity-100" : "border-transparent opacity-50 hover:opacity-100"}`}
-                >
-                  <CakePhoto src={img} alt={`${cake.name} photo ${idx + 1}`} className="h-full w-full" />
-                </button>
-              ))}
-            </div>
-          )}
+          <CakeGallery images={displayImages} name={cake.name}/>
         </div>
 
         <div>

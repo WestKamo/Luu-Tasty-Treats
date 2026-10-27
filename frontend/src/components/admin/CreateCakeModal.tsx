@@ -19,7 +19,9 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
   const [progress, setProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [uploadPosition, setUploadPosition] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,25 +44,40 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
     }
   }
 
-  async function handleFile(file: File) {
-    if (!newCakeId) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("Choose a JPG, PNG, or WebP image."); return; }
-    setSelectedFile(file);
+  function chooseFiles(files: FileList | File[]) {
+    const valid = Array.from(files).filter((f) => ["image/jpeg","image/png","image/webp"].includes(f.type) && f.size <= 5 * 1024 * 1024);
+    if (valid.length !== Array.from(files).length) toast.error("Choose JPG, PNG or WebP images up to 5 MB each.");
+    if (!valid.length) return;
+    setSelectedFiles(valid);
     setUploadError(null);
-    setPreviewUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return URL.createObjectURL(file); });
+    setPreviewUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return URL.createObjectURL(valid[0]); });
+  }
+
+  async function uploadSelection(files: File[] = selectedFiles) {
+    if (!newCakeId || !files.length || uploading) return;
     setUploading(true);
-    setProgress(0);
+    setUploadError(null);
+    let completed = 0;
     try {
-      await uploadCakeImage(newCakeId, file, 1, setProgress);
-      toast.success(`${newCakeName} is now live!`);
-      onCreated();
-      setTimeout(onClose, 700);
+      for (const file of files) {
+        setUploadPosition(completed + 1);
+        setProgress(0);
+        await uploadCakeImage(newCakeId, file, uploadedCount + completed + 1, setProgress);
+        completed += 1;
+        setUploadedCount((count) => count + 1);
+        onCreated();
+      }
+      toast.success(`${completed} cake photo${completed === 1 ? "" : "s"} uploaded`);
+      setSelectedFiles([]);
+      setPreviewUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; });
     } catch (error) {
+      setSelectedFiles(files.slice(completed));
       const message = describeCakeApiError(error, "upload");
       setUploadError(message);
       toast.error(message);
     } finally {
       setUploading(false);
+      setUploadPosition(0);
     }
   }
 
@@ -94,20 +111,24 @@ export function CreateCakeModal({ onClose, onCreated }: Props) {
             </motion.form>
           ) : (
             <motion.div key="step2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-              <div onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={(e) => { e.preventDefault(); setIsDragging(false); const file = e.dataTransfer.files?.[0]; if (file) handleFile(file); }} onClick={() => fileInputRef.current?.click()} className={`flex h-56 cursor-pointer flex-col items-center justify-center rounded-4xl border-2 border-dashed transition-all ${isDragging ? "border-berry bg-berry/10" : "border-chocolate/20 bg-white"}`}>
+              <div onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={(e) => { e.preventDefault(); setIsDragging(false); chooseFiles(e.dataTransfer.files); }} onClick={() => fileInputRef.current?.click()} className={`flex h-56 cursor-pointer flex-col items-center justify-center rounded-4xl border-2 border-dashed transition-all ${isDragging ? "border-berry bg-berry/10" : "border-chocolate/20 bg-white"}`}>
                 {previewUrl ? <img src={previewUrl} alt="Preview" className="h-full w-full rounded-4xl object-cover" /> : <><p className="font-medium text-chocolate/60">Drag & drop an image</p><p className="mt-1 text-xs text-chocolate/40">or click to browse</p></>}
               </div>
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFile(file); }} />
+              <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { if (e.target.files?.length) chooseFiles(e.target.files); e.target.value = ""; }} />
+              <p className="mt-3 text-xs text-chocolate/55">{uploadedCount ? `${uploadedCount} photo${uploadedCount === 1 ? "" : "s"} saved. Add more or finish.` : "Choose one photo or multiple photos (max 5 MB each)."}</p>
               {uploadError && <p role="alert" className="mt-3 text-sm text-red-600">{uploadError}</p>}
-              {selectedFile && !uploading && uploadError && (
-                <button type="button" onClick={() => void handleFile(selectedFile)} className="mt-3 w-full rounded-full bg-chocolate px-4 py-3 text-sm font-semibold text-cream">
-                  Retry photo upload
+              {selectedFiles.length > 0 && !uploading && (
+                <button type="button" onClick={() => void uploadSelection()} className="mt-3 w-full rounded-full bg-chocolate px-4 py-3 text-sm font-semibold text-cream">
+                  {uploadError ? "Retry remaining photos" : `Upload ${selectedFiles.length} selected photo${selectedFiles.length === 1 ? "" : "s"}`}
                 </button>
+              )}
+              {uploadedCount > 0 && !uploading && (
+                <button type="button" onClick={() => { onCreated(); onClose(); }} className="mt-2 w-full rounded-full border border-chocolate/20 px-4 py-3 text-sm font-medium text-chocolate">Finish and view catalog</button>
               )}
               {uploading && (
                 <div className="mt-4">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-chocolate/10"><motion.div className="h-full bg-berry" animate={{ width: `${progress}%` }} transition={{ ease: "easeOut" }} /></div>
-                  <p className="mt-1 text-center text-xs text-chocolate/40">Uploading... {progress}%</p>
+                  <p className="mt-1 text-center text-xs text-chocolate/40">Uploading photo {uploadPosition} of {selectedFiles.length}... {progress}%</p>
                 </div>
               )}
             </motion.div>
