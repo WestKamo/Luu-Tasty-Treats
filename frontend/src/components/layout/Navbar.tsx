@@ -3,10 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/cartStore";
-import { useAuthStore } from "@/store/authStore";
 import { CakeSlice, ShoppingBag } from "lucide-react";
 
 const SECRET_CLICKS_REQUIRED = 5;
@@ -16,9 +15,7 @@ export function Navbar() {
   const router = useRouter();
   const cartCount = useCartStore((s) => s.lines.length);
   const bumpTick = useCartStore((s) => s.bumpTick);
-  const isAdmin = useAuthStore((s) => s.roles.includes("Admin") || s.roles.includes("SuperAdmin"));
   const clickTimestamps = useRef<number[]>([]);
-  const [unlocking, setUnlocking] = useState(false);
 
   function handleLogoClick(e: React.MouseEvent) {
     const now = Date.now();
@@ -29,8 +26,7 @@ export function Navbar() {
     if (updatedClicks.length >= SECRET_CLICKS_REQUIRED) {
       e.preventDefault();
       clickTimestamps.current = [];
-      setUnlocking(true);
-      setTimeout(() => router.push(isAdmin ? "/admin/dashboard" : "/admin/login"), 900);
+      router.push("/admin/login");
     } else {
       e.preventDefault();
       router.push("/owner");
@@ -106,30 +102,6 @@ export function Navbar() {
         </nav>
       </header>
 
-      <AnimatePresence>
-        {unlocking && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-center text-white"
-            >
-              <motion.div
-                className="mx-auto mb-4 h-14 w-14 rounded-full border-2 border-white border-t-transparent"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              <p className="font-serif text-lg tracking-widest text-white">ACCESS GRANTED</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }
