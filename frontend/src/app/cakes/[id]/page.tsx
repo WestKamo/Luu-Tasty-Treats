@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-import CakePhoto from "@/components/customer/CakePhoto";
+import { CakeGallery } from "@/components/customer/CakeGallery";
 import { getCakeCustomizationSchema } from "@/lib/api/catalog";
 import { CakeDetail } from "@/types/catalog";
 import { useCartStore } from "@/store/cartStore";
@@ -17,7 +17,6 @@ export default function CakeDetailPage() {
 
   const [cake, setCake] = useState<CakeDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState(0);
 
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [quantity, setQuantity] = useState(1);
